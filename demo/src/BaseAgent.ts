@@ -29,6 +29,8 @@ import {
   CredentialsModule,
   Agent,
   HttpOutboundTransport,
+  ConsoleLogger,
+  LogLevel
 } from '@credo-ts/core'
 import { IndyVdrIndyDidResolver, IndyVdrAnonCredsRegistry, IndyVdrModule } from '@credo-ts/indy-vdr'
 import { agentDependencies, HttpInboundTransport } from '@credo-ts/node'
@@ -68,7 +70,9 @@ export class BaseAgent {
         id: name,
         key: name,
       },
+      //endpoints: [`https://9241-151-19-62-57.ngrok-free.app`],
       endpoints: [`http://localhost:${this.port}`],
+      logger: new ConsoleLogger(LogLevel.debug),
     } satisfies InitConfig
 
     this.config = config
