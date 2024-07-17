@@ -7,6 +7,7 @@ import type { ConnectionRecord } from '../modules/connections'
 import type { ResolvedDidCommService } from '../modules/didcomm'
 import type { OutOfBandRecord } from '../modules/oob/repository'
 import type { OutboundTransport } from '../transport/OutboundTransport'
+import type { InboundTransport } from '../transport/InboundTransport'
 import type { EncryptedMessage, OutboundPackage } from '../types'
 
 import { DID_COMM_TRANSPORT_QUEUE, InjectionSymbols } from '../constants'
@@ -44,6 +45,7 @@ export class MessageSender {
   private didCommDocumentService: DidCommDocumentService
   private eventEmitter: EventEmitter
   private _outboundTransports: OutboundTransport[] = []
+  private _mqttTransport: InboundTransport| undefined| null
 
   public constructor(
     envelopeService: EnvelopeService,
@@ -66,6 +68,20 @@ export class MessageSender {
 
   public get outboundTransports() {
     return this._outboundTransports
+  }
+
+  public get mqttTransport() {
+    return this._mqttTransport
+  }
+
+  public registerMqttTransport(inboundTransport: InboundTransport) {
+    this._mqttTransport=inboundTransport
+  }
+
+  public unregisterMqttTransport(){
+    if (this._mqttTransport){
+      this._mqttTransport=null
+    }
   }
 
   public registerOutboundTransport(outboundTransport: OutboundTransport) {

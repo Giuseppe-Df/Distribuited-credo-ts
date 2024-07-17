@@ -33,7 +33,7 @@ import {
   LogLevel
 } from '@credo-ts/core'
 import { IndyVdrIndyDidResolver, IndyVdrAnonCredsRegistry, IndyVdrModule } from '@credo-ts/indy-vdr'
-import { agentDependencies, HttpInboundTransport } from '@credo-ts/node'
+import { agentDependencies, HttpInboundTransport, MqttTransport } from '@credo-ts/node'
 import { anoncreds } from '@hyperledger/anoncreds-nodejs'
 import { ariesAskar } from '@hyperledger/aries-askar-nodejs'
 import { indyVdr } from '@hyperledger/indy-vdr-nodejs'
@@ -83,6 +83,7 @@ export class BaseAgent {
       modules: getAskarAnonCredsIndyModules(),
     })
     this.agent.registerInboundTransport(new HttpInboundTransport({ port }))
+    this.agent.registerMqttTrasport(new MqttTransport("mqtt://broker.hivemq.com", "1234"))
     this.agent.registerOutboundTransport(new HttpOutboundTransport())
   }
 

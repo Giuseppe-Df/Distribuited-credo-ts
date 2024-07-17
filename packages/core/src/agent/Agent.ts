@@ -109,6 +109,14 @@ export class Agent<AgentModules extends AgentModulesInput = any> extends BaseAge
     super(agentConfig, dependencyManager)
   }
 
+  public registerMqttTrasport(inboundTransport:InboundTransport){
+    this.messageSender.registerMqttTransport(inboundTransport)
+  }
+
+  public unregisterMqttTrasport(){
+    this.messageSender.unregisterMqttTransport()
+  }
+
   public registerInboundTransport(inboundTransport: InboundTransport) {
     this.messageReceiver.registerInboundTransport(inboundTransport)
   }
@@ -119,6 +127,10 @@ export class Agent<AgentModules extends AgentModulesInput = any> extends BaseAge
 
   public get inboundTransports() {
     return this.messageReceiver.inboundTransports
+  }
+
+  public get mqttTransport() {
+    return this.messageSender.mqttTransport
   }
 
   public registerOutboundTransport(outboundTransport: OutboundTransport) {
@@ -173,6 +185,10 @@ export class Agent<AgentModules extends AgentModulesInput = any> extends BaseAge
       if (module.initialize) {
         await module.initialize(this.agentContext)
       }
+    }
+
+    if(this.mqttTransport){
+      await this.mqttTransport.start
     }
 
     for (const transport of this.inboundTransports) {
