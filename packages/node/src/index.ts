@@ -15,4 +15,5 @@ const agentDependencies: AgentDependencies = {
   WebSocketClass: WebSocket,
 }
 
-export { agentDependencies, HttpInboundTransport, WsInboundTransport,MqttTransport }
+export { agentDependencies, HttpInboundTransport, WsInboundTransport, MqttTransport}
+

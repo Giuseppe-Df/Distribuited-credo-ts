@@ -114,6 +114,12 @@ export class MessageSender {
     }
   }
 
+  public async sendMessageToBroker(message:AgentMessage, type:string){
+    if (type=="signature"){
+    }
+
+  }
+
   private async sendMessageToSession(agentContext: AgentContext, session: TransportSession, message: AgentMessage) {
     this.logger.debug(`Packing message and sending it via existing session ${session.type}...`)
     if (!session.keys) {

@@ -1,6 +1,7 @@
 import type { InboundTransport, Agent, TransportSession, EncryptedMessage, AgentContext } from '@credo-ts/core'
-
 import mqtt, { MqttClient } from "mqtt"
+
+import { AgentMessage } from '@credo-ts/core'
 
 export class MqttTransport implements InboundTransport{
 
@@ -10,29 +11,33 @@ export class MqttTransport implements InboundTransport{
 
     public constructor(url:string, deviceId:string) {
         this.brokerUrl = url
-        this.signatureTopic = deviceId+"/signatureExchange/send"
+        this.signatureTopic = deviceId+"/signatureExchange/request"
     }
 
     public async start(agent: Agent) {
         agent.config.logger.debug(`Starting MQTT Transport`)
 
         this.client = mqtt.connect(this.brokerUrl);
-        this.client.on("connect", () => {
-            agent.config.logger.debug(`MQTT Transport Started`)
-        });
-        
-        this.client.on('message', (topic, message) => {
-            agent.config.logger.debug(`Received message on ${topic}: ${message.toString()}`);
-            // Processa il messaggio come desiderato
-        });
-    
-        this.client.on('error', (err) => {
-            agent.config.logger.debug(`MQTT Error: ${err}`);
-        });
-    
-        this.client.on('close', () => {
-            agent.config.logger.debug('Disconnected from MQTT broker');
-        });
+        return new Promise<void>((resolve, reject) => {
+            this.client.on('connect', () => {
+              agent.config.logger.debug(`MQTT Transport Started`);
+              resolve();
+            });
+      
+            this.client.on('message', (topic, message) => {
+              agent.config.logger.debug(`Received message on ${topic}: ${message.toString()}`);
+              // Processa il messaggio come desiderato
+            });
+      
+            this.client.on('error', (err) => {
+              agent.config.logger.debug(`MQTT Error: ${err}`);
+              reject(err); // Se desideri interrompere il processo di start in caso di errore iniziale
+            });
+      
+            this.client.on('close', () => {
+              agent.config.logger.debug('Disconnected from MQTT broker');
+            });
+          });
     }
 
     public subscribe(topic: string,agent: Agent) {
@@ -47,13 +52,13 @@ export class MqttTransport implements InboundTransport{
         }
     }
 
-    public publish(topic: string, message: string, agent:Agent) {
+    public publishSignatureRequest(message: string, agent:Agent) {
         if(this.client){
-            this.client.publish(topic, message, (err) => {
+            this.client.publish(this.signatureTopic, message, (err) => {
                 if (err) {
-                    agent.config.logger.debug(`MQTT-Failed to publish to ${topic}: ${err}`);
+                    agent.config.logger.debug(`MQTT-Failed to publish to ${this.signatureTopic}: ${err}`);
                 } else {
-                    agent.config.logger.debug(`MQTT-Published to ${topic}`);
+                    agent.config.logger.debug(`MQTT-Published to ${this.signatureTopic}`);
                 }
             });
         }

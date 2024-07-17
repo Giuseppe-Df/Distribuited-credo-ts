@@ -188,7 +188,7 @@ export class Agent<AgentModules extends AgentModulesInput = any> extends BaseAge
     }
 
     if(this.mqttTransport){
-      await this.mqttTransport.start
+      await this.mqttTransport.start(this)
     }
 
     for (const transport of this.inboundTransports) {
