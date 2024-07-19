@@ -1,13 +1,15 @@
-import type { InboundTransport, Agent, TransportSession, EncryptedMessage, AgentContext } from '@credo-ts/core'
+import type { OutboundTransport } from './OutboundTransport'
+import type { Agent } from '../agent/Agent'
 import mqtt, { MqttClient } from "mqtt"
+import { OutboundPackage } from '../types'
+import { AgentMessage } from '../agent/AgentMessage'
 
-import { AgentMessage } from '@credo-ts/core'
-
-export class MqttTransport implements InboundTransport{
+export class MqttTransport {
 
     private client!: MqttClient
     private brokerUrl: string
     private signatureTopic: string
+    public supportedSchemes = ['mqtt', 'mqtts']
 
     public constructor(url:string, deviceId:string) {
         this.brokerUrl = url
@@ -52,13 +54,13 @@ export class MqttTransport implements InboundTransport{
         }
     }
 
-    public publishSignatureRequest(message: string, agent:Agent) {
+    public async publishSignatureRequest(message: AgentMessage) {
         if(this.client){
-            this.client.publish(this.signatureTopic, message, (err) => {
+            this.client.publish(this.signatureTopic, JSON.stringify(message), (err) => {
                 if (err) {
-                    agent.config.logger.debug(`MQTT-Failed to publish to ${this.signatureTopic}: ${err}`);
+                    //agent.config.logger.debug(`MQTT-Failed to publish to ${this.signatureTopic}: ${err}`);
                 } else {
-                    agent.config.logger.debug(`MQTT-Published to ${this.signatureTopic}`);
+                    //agent.config.logger.debug(`MQTT-Published to ${this.signatureTopic}`);
                 }
             });
         }

@@ -5,7 +5,6 @@ import { WebSocket } from 'ws'
 
 import { NodeFileSystem } from './NodeFileSystem'
 import { HttpInboundTransport } from './transport/HttpInboundTransport'
-import { MqttTransport } from './transport/MqttTransport'
 import { WsInboundTransport } from './transport/WsInboundTransport'
 
 const agentDependencies: AgentDependencies = {
@@ -15,5 +14,5 @@ const agentDependencies: AgentDependencies = {
   WebSocketClass: WebSocket,
 }
 
-export { agentDependencies, HttpInboundTransport, WsInboundTransport, MqttTransport}
+export { agentDependencies, HttpInboundTransport, WsInboundTransport}
 

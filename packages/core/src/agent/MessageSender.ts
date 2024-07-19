@@ -7,7 +7,7 @@ import type { ConnectionRecord } from '../modules/connections'
 import type { ResolvedDidCommService } from '../modules/didcomm'
 import type { OutOfBandRecord } from '../modules/oob/repository'
 import type { OutboundTransport } from '../transport/OutboundTransport'
-import type { InboundTransport } from '../transport/InboundTransport'
+import type { MqttTransport } from '../transport/MqttTransport'
 import type { EncryptedMessage, OutboundPackage } from '../types'
 
 import { DID_COMM_TRANSPORT_QUEUE, InjectionSymbols } from '../constants'
@@ -45,7 +45,7 @@ export class MessageSender {
   private didCommDocumentService: DidCommDocumentService
   private eventEmitter: EventEmitter
   private _outboundTransports: OutboundTransport[] = []
-  private _mqttTransport: InboundTransport| undefined| null
+  private _mqttTransport: MqttTransport| undefined| null
 
   public constructor(
     envelopeService: EnvelopeService,
@@ -74,8 +74,8 @@ export class MessageSender {
     return this._mqttTransport
   }
 
-  public registerMqttTransport(inboundTransport: InboundTransport) {
-    this._mqttTransport=inboundTransport
+  public registerMqttTransport(mqttTransport: MqttTransport) {
+    this._mqttTransport=mqttTransport
   }
 
   public unregisterMqttTransport(){
@@ -116,8 +116,9 @@ export class MessageSender {
 
   public async sendMessageToBroker(message:AgentMessage, type:string){
     if (type=="signature"){
-    }
+      this.mqttTransport?.publishSignatureRequest(message)
 
+  }
   }
 
   private async sendMessageToSession(agentContext: AgentContext, session: TransportSession, message: AgentMessage) {

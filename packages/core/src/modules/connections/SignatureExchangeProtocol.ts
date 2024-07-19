@@ -10,6 +10,7 @@ import { SignatureExchangeRole, SignatureExchangeState } from './models'
 import { MessageSender } from '../../agent/MessageSender'
 import { DidDocument } from '../dids'
 import { SignatureExchangeExchangeRequestMessageOptions, SignatureExchangeRequestMessage } from './messages/SignatureExchangeRequestMessage'
+import { OutboundMessageContext } from '../../agent/models'
 
 
 

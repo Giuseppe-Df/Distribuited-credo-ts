@@ -492,6 +492,9 @@ importers:
       make-error:
         specifier: ^1.3.6
         version: 1.3.6
+      mqtt:
+        specifier: ^5.8.0
+        version: 5.8.0
       object-inspect:
         specifier: ^1.10.3
         version: 1.13.1
@@ -655,9 +658,6 @@ importers:
       express:
         specifier: ^4.17.1
         version: 4.19.2
-      mqtt:
-        specifier: ^5.8.0
-        version: 5.8.0
       ws:
         specifier: ^8.13.0
         version: 8.17.0

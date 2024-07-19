@@ -4,6 +4,7 @@ import type { AgentMessageReceivedEvent } from './Events'
 import type { Module } from '../plugins'
 import type { InboundTransport } from '../transport/InboundTransport'
 import type { OutboundTransport } from '../transport/OutboundTransport'
+import type { MqttTransport } from '../transport/MqttTransport'
 import type { InitConfig } from '../types'
 import type { Subscription } from 'rxjs'
 
@@ -109,8 +110,8 @@ export class Agent<AgentModules extends AgentModulesInput = any> extends BaseAge
     super(agentConfig, dependencyManager)
   }
 
-  public registerMqttTrasport(inboundTransport:InboundTransport){
-    this.messageSender.registerMqttTransport(inboundTransport)
+  public registerMqttTrasport(mqttTransport:MqttTransport){
+    this.messageSender.registerMqttTransport(mqttTransport)
   }
 
   public unregisterMqttTrasport(){
