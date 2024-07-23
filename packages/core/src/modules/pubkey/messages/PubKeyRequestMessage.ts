@@ -2,16 +2,13 @@ import { Expose, Type } from 'class-transformer'
 import { IsOptional, IsString, ValidateNested } from 'class-validator'
 
 import { AgentMessage } from '../../../agent/AgentMessage'
-import { Attachment } from '../../../decorators/attachment/Attachment'
 import { IsValidMessageType, parseMessageType } from '../../../utils/messageType'
 
 import { DidDocument } from '../../dids'
 
 export interface SignatureExchangeExchangeRequestMessageOptions {
   id?: string
-  label: string
-  didDoc: DidDocument
-  connectionId:string
+  contextId:string
 }
 
 /**
@@ -19,7 +16,7 @@ export interface SignatureExchangeExchangeRequestMessageOptions {
  *
  * @see https://github.com/hyperledger/aries-rfcs/blob/main/features/0023-did-exchange/README.md#1-exchange-request
  */
-export class SignatureExchangeRequestMessage extends AgentMessage {
+export class PubKeyRequestMessage extends AgentMessage {
   /**
    * Create new DidExchangeRequestMessage instance.
    * @param options
@@ -29,24 +26,14 @@ export class SignatureExchangeRequestMessage extends AgentMessage {
 
     if (options) {
       this.id = options.id || this.generateId();
-      this.label = options.label;
-      this.connectionId = options.connectionId;
-      this.didDoc = options.didDoc;
+      this.contextId = options.contextId;
     }
   }
 
-  @IsValidMessageType(SignatureExchangeRequestMessage.type)
-  public readonly type = SignatureExchangeRequestMessage.type.messageTypeUri;
-  public static readonly type = parseMessageType('https://didcomm.org/signature_exchange/1.0/request');
+  @IsValidMessageType(PubKeyRequestMessage.type)
+  public readonly type = PubKeyRequestMessage.type.messageTypeUri;
+  public static readonly type = parseMessageType('https://didcomm.org/pubkey_exchange/1.0/request');
 
   @IsString()
-  public readonly label?: string;
-
-  @Expose({ name: 'did_doc' })
-  @Type(() => DidDocument)
-  @ValidateNested()
-  public didDoc?: DidDocument; 
-
-  @IsString()
-  public readonly connectionId?: string;
+  public readonly contextId?: string;
 }

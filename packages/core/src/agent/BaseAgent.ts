@@ -10,6 +10,7 @@ import type { DependencyManager } from '../plugins'
 import { CredoError } from '../error'
 import { BasicMessagesApi } from '../modules/basic-messages'
 import { ConnectionsApi } from '../modules/connections'
+import { PubKeyApi } from '../modules/pubkey'
 import { CredentialsApi } from '../modules/credentials'
 import { DidsApi } from '../modules/dids'
 import { DiscoverFeaturesApi } from '../modules/discover-features'
@@ -46,6 +47,7 @@ export abstract class BaseAgent<AgentModules extends ModulesMap = EmptyModuleMap
   protected agentContext: AgentContext
 
   public readonly connections: ConnectionsApi
+  public readonly pubkey: PubKeyApi
   public readonly credentials: CustomOrDefaultApi<AgentModules['credentials'], CredentialsModule>
   public readonly proofs: CustomOrDefaultApi<AgentModules['proofs'], ProofsModule>
   public readonly mediator: MediatorApi
@@ -89,6 +91,7 @@ export abstract class BaseAgent<AgentModules extends ModulesMap = EmptyModuleMap
     this.agentContext = this.dependencyManager.resolve(AgentContext)
 
     this.connections = this.dependencyManager.resolve(ConnectionsApi)
+    this.pubkey = this.dependencyManager.resolve(PubKeyApi)
     this.credentials = this.dependencyManager.resolve(CredentialsApi) as CustomOrDefaultApi<
       AgentModules['credentials'],
       CredentialsModule

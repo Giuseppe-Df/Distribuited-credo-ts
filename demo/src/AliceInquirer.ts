@@ -17,6 +17,7 @@ export const runAlice = async () => {
 }
 
 enum PromptOptions {
+  PubKey="Request public key",
   ReceiveConnectionUrl = 'Receive connection invitation',
   SendMessage = 'Send message',
   Exit = 'Exit',
@@ -44,7 +45,7 @@ export class AliceInquirer extends BaseInquirer {
   private async getPromptChoice() {
     if (this.alice.connectionRecordFaberId) return prompt([this.inquireOptions(this.promptOptionsString)])
 
-    const reducedOption = [PromptOptions.ReceiveConnectionUrl, PromptOptions.Exit, PromptOptions.Restart]
+    const reducedOption = [PromptOptions.PubKey,PromptOptions.ReceiveConnectionUrl, PromptOptions.Exit, PromptOptions.Restart]
     return prompt([this.inquireOptions(reducedOption)])
   }
 
@@ -53,6 +54,9 @@ export class AliceInquirer extends BaseInquirer {
     if (this.listener.on) return
 
     switch (choice.options) {
+      case PromptOptions.PubKey:
+        await this.pubKey()
+        break
       case PromptOptions.ReceiveConnectionUrl:
         await this.connection()
         break
@@ -85,6 +89,10 @@ export class AliceInquirer extends BaseInquirer {
     } else if (confirm.options === ConfirmOptions.Yes) {
       await this.alice.acceptProofRequest(proofRecord)
     }
+  }
+
+  public async pubKey() {
+    await this.alice.pubKeyExchange()
   }
 
   public async connection() {

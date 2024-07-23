@@ -9,11 +9,13 @@ export class MqttTransport {
     private client!: MqttClient
     private brokerUrl: string
     private signatureTopic: string
+    private pubKeyTopic: string
     public supportedSchemes = ['mqtt', 'mqtts']
 
     public constructor(url:string, deviceId:string) {
         this.brokerUrl = url
         this.signatureTopic = deviceId+"/signatureExchange/request"
+        this.pubKeyTopic = deviceId+"/PubKey/request"
     }
 
     public async start(agent: Agent) {
@@ -64,6 +66,33 @@ export class MqttTransport {
                 }
             });
         }
+    }
+
+    public async connect(){
+        return new Promise <void>((resolve,reject) =>{
+            this.client = mqtt.connect(this.brokerUrl);
+            this.client.on('connect', () => {
+                resolve();
+              });
+              this.client.on('error', (err) => {
+                reject(err);
+              });
+        })
+    }
+
+    public async publishPubKeyRequest(message: AgentMessage) {
+        if (!this.client){
+            await this.connect()
+        }
+        return new Promise<void>((resolve, reject) => {
+            this.client.publish(this.pubKeyTopic, JSON.stringify(message), (err) => {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve()
+                }
+            });
+        })
     }
 
     public async stop(): Promise<void> {

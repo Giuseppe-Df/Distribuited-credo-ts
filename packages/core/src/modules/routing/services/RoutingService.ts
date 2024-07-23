@@ -28,7 +28,6 @@ export class RoutingService {
   ): Promise<Routing> {
     // Create and store new key
     const recipientKey = await agentContext.wallet.createKey({ keyType: KeyType.Ed25519 })
-
     let routing: Routing = {
       endpoints: agentContext.config.endpoints,
       routingKeys: [],

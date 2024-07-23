@@ -31,7 +31,8 @@ import {
   HttpOutboundTransport,
   ConsoleLogger,
   MqttTransport,
-  LogLevel
+  LogLevel,
+  PubKeyModule
 } from '@credo-ts/core'
 import { IndyVdrIndyDidResolver, IndyVdrAnonCredsRegistry, IndyVdrModule } from '@credo-ts/indy-vdr'
 import { agentDependencies, HttpInboundTransport } from '@credo-ts/node'
@@ -100,6 +101,7 @@ function getAskarAnonCredsIndyModules() {
   const legacyIndyProofFormatService = new LegacyIndyProofFormatService()
 
   return {
+    pubkey: new PubKeyModule(),
     connections: new ConnectionsModule({
       autoAcceptConnections: true,
     }),

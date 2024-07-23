@@ -15,7 +15,12 @@ export class Alice extends BaseAgent {
   public static async build(): Promise<Alice> {
     const alice = new Alice(9000, 'alice')
     await alice.initializeAgent()
+  
     return alice
+  }
+
+  public async pubKeyExchange(): Promise<void>{
+    await this.agent.pubkey.requestPubKey()
   }
 
   private async getConnectionRecord() {
