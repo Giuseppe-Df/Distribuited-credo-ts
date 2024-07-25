@@ -4,6 +4,7 @@ import type { AgentContext } from './context'
 import type { ConnectionRecord } from '../modules/connections'
 import type { InboundTransport } from '../transport'
 import type { EncryptedMessage, PlaintextMessage } from '../types'
+import { PubKeyResponseMessage } from '../modules/pubkey/messages/PubKeyResponseMessage'
 
 import { InjectionSymbols } from '../constants'
 import { CredoError } from '../error'
@@ -23,10 +24,12 @@ import { MessageSender } from './MessageSender'
 import { TransportService } from './TransportService'
 import { AgentContextProvider } from './context'
 import { InboundMessageContext, OutboundMessageContext } from './models'
+import { PubKeyApi } from '../modules/pubkey'
 
 @injectable()
 export class MessageReceiver {
   private envelopeService: EnvelopeService
+  private pubKeyApi: PubKeyApi
   private transportService: TransportService
   private messageSender: MessageSender
   private dispatcher: Dispatcher
@@ -38,6 +41,7 @@ export class MessageReceiver {
 
   public constructor(
     envelopeService: EnvelopeService,
+    pubKeyApi: PubKeyApi,
     transportService: TransportService,
     messageSender: MessageSender,
     connectionService: ConnectionService,
@@ -46,6 +50,7 @@ export class MessageReceiver {
     @inject(InjectionSymbols.AgentContextProvider) agentContextProvider: AgentContextProvider,
     @inject(InjectionSymbols.Logger) logger: Logger
   ) {
+    this.pubKeyApi= pubKeyApi
     this.envelopeService = envelopeService
     this.transportService = transportService
     this.messageSender = messageSender
@@ -68,6 +73,12 @@ export class MessageReceiver {
   public async unregisterInboundTransport(inboundTransport: InboundTransport) {
     this._inboundTransports = this._inboundTransports.filter((transport) => transport !== inboundTransport)
     await inboundTransport.stop()
+  }
+
+  public async receivePubKeyResponde(inboundMessage: PubKeyResponseMessage){
+    this.logger.debug("messaggio ricevuto", inboundMessage)
+    this.pubKeyApi.processResponse(inboundMessage)
+
   }
 
   /**

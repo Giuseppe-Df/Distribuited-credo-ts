@@ -1,1 +1,1 @@
-//export * from './PubKeyService'
+export * from './PubKeyService'

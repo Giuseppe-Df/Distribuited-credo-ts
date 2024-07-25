@@ -115,10 +115,11 @@ export class MessageSender {
   }
 
   public async sendMessageToBroker(message:AgentMessage, type:string){
-    this.logger.debug("Sending message to broker")
+    this.logger.debug("Sending message to broker", message)
     if (type=="signature"){
       this.mqttTransport?.publishSignatureRequest(message)
     } else if (type =="pubkey"){
+
       await this.mqttTransport?.publishPubKeyRequest(message)
     }
   }

@@ -3,6 +3,7 @@ import type { Agent } from '../agent/Agent'
 import mqtt, { MqttClient } from "mqtt"
 import { OutboundPackage } from '../types'
 import { AgentMessage } from '../agent/AgentMessage'
+import { MessageReceiver } from '../agent/MessageReceiver'
 
 export class MqttTransport {
 
@@ -10,29 +11,51 @@ export class MqttTransport {
     private brokerUrl: string
     private signatureTopic: string
     private pubKeyTopic: string
+    private pubKeyResponse: string
     public supportedSchemes = ['mqtt', 'mqtts']
 
     public constructor(url:string, deviceId:string) {
         this.brokerUrl = url
         this.signatureTopic = deviceId+"/signatureExchange/request"
         this.pubKeyTopic = deviceId+"/PubKey/request"
+        this.pubKeyResponse = deviceId+"/PubKey/response"
     }
 
     public async start(agent: Agent) {
+        const messageReceiver = agent.dependencyManager.resolve(MessageReceiver)
         agent.config.logger.debug(`Starting MQTT Transport`)
 
         this.client = mqtt.connect(this.brokerUrl);
+        this.client.on('message', (topic, message) => {
+            //agent.config.logger.debug(`Received message on ${topic}: ${JSON.parse(message.toString())}`);
+            if (topic==this.pubKeyResponse){
+                const parsedMessage=JSON.parse(message.toString())
+                messageReceiver.receivePubKeyResponde(parsedMessage)
+            }
+        });
         return new Promise<void>((resolve, reject) => {
             this.client.on('connect', () => {
               agent.config.logger.debug(`MQTT Transport Started`);
-              resolve();
+              // Cancellare i messaggi retained precedenti
+                this.client.publish('1234/PubKey/response', '', { retain: true }, (err) => {
+                    if (!err) {
+                    console.log('Messaggio retained cancellato');
+                    } else {
+                    console.error('Errore nella cancellazione del messaggio retained:', err);
+                    }
+                });
+                this.client.subscribe(this.pubKeyResponse,{qos:2}, (err) => {
+                    if (err) {
+                        agent.config.logger.debug(`MQTT-Failed to subscribe to ${this.pubKeyResponse}: ${err}`);
+                        reject(err)
+                    } else {
+                        agent.config.logger.debug(`MQTT-Subscribed to ${this.pubKeyResponse}`);
+                        resolve();
+                    }
+                });
+              
             });
-      
-            this.client.on('message', (topic, message) => {
-              agent.config.logger.debug(`Received message on ${topic}: ${message.toString()}`);
-              // Processa il messaggio come desiderato
-            });
-      
+
             this.client.on('error', (err) => {
               agent.config.logger.debug(`MQTT Error: ${err}`);
               reject(err); // Se desideri interrompere il processo di start in caso di errore iniziale
