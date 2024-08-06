@@ -19,7 +19,7 @@ export class Alice extends BaseAgent {
     return alice
   }
 
-  public async pubKeyExchange(): Promise<void>{
+  public async pubKeyRequest(): Promise<void>{
     await this.agent.pubkey.requestPubKey()
   }
 

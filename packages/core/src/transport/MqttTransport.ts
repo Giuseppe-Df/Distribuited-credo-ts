@@ -37,7 +37,7 @@ export class MqttTransport {
             this.client.on('connect', () => {
               agent.config.logger.debug(`MQTT Transport Started`);
               // Cancellare i messaggi retained precedenti
-                this.client.publish('1234/PubKey/response', '', { retain: true }, (err) => {
+                this.client.publish(this.pubKeyResponse, '', { retain: true }, (err) => {
                     if (!err) {
                     console.log('Messaggio retained cancellato');
                     } else {

@@ -1,13 +1,13 @@
 import { AgentContext } from '../../agent'
 import { MessageSender } from '../../agent/MessageSender'
 import { PubKeyRequestMessage } from './messages'
-import { PlaintextMessage } from '../../types'
 import { PubKeyService } from './services'
 import { PubKeyRole,PubKeyState } from './models'
 import { PubKeyResponseMessage } from './messages/PubKeyResponseMessage'
 import { Key, KeyType } from '../../crypto'
 
 import { injectable } from '../../plugins'
+import { PubKeyRecord } from './repository'
 
 @injectable()
 export class PubKeyApi {
@@ -34,24 +34,25 @@ export class PubKeyApi {
           arrayBuffer[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
         }
         return arrayBuffer;
-      }
+    }
 
     public async requestPubKey(){
-        const message = new PubKeyRequestMessage({contextId:this.agentContext.contextCorrelationId})
+        const result= await this.pubKeyService.createRequest(this.agentContext)
+        const {message,keyRecord}=result
         await this.messageSender.sendMessageToBroker(message,"pubkey")
+        this.pubKeyService.updateState(this.agentContext,keyRecord,PubKeyState.RequestSent)
     }
 
     public async processResponse(message:PubKeyResponseMessage){
     
         const key= this.hexStringToUint8Array(message.publicKey)
         const keyObj=new Key(key,KeyType.Ed25519)
-        const keyRecord = await this.pubKeyService.createKey(this.agentContext, {
+        const keyRecord = await this.pubKeyService.createRecord(this.agentContext, {
             key: keyObj,
             contextId: this.agentContext.contextCorrelationId,
             role:PubKeyRole.Requester,
-            state: PubKeyState.ResponseReceived
+            state:PubKeyState.ResponseReceived        
         })
-        
     }
 
 }

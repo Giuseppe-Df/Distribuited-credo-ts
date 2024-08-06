@@ -55,7 +55,7 @@ export class AliceInquirer extends BaseInquirer {
 
     switch (choice.options) {
       case PromptOptions.PubKey:
-        await this.pubKey()
+        await this.publicKey()
         break
       case PromptOptions.ReceiveConnectionUrl:
         await this.connection()
@@ -71,6 +71,11 @@ export class AliceInquirer extends BaseInquirer {
         return
     }
     await this.processAnswer()
+  }
+
+  public async publicKey(){
+    await this.alice.pubKeyRequest()
+    //inserire codice per aspettare la chiave 
   }
 
   public async acceptCredentialOffer(credentialRecord: CredentialExchangeRecord) {
@@ -89,10 +94,6 @@ export class AliceInquirer extends BaseInquirer {
     } else if (confirm.options === ConfirmOptions.Yes) {
       await this.alice.acceptProofRequest(proofRecord)
     }
-  }
-
-  public async pubKey() {
-    await this.alice.pubKeyExchange()
   }
 
   public async connection() {
