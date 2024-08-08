@@ -8,6 +8,7 @@ import { Key, KeyType } from '../../crypto'
 
 import { injectable } from '../../plugins'
 import { PubKeyRecord } from './repository'
+import { MessageHandlerRegistry } from '../../agent/MessageHandlerRegistry'
 
 @injectable()
 export class PubKeyApi {
@@ -16,6 +17,7 @@ export class PubKeyApi {
     private pubKeyService: PubKeyService
 
     public constructor(
+        messageHandlerRegistry: MessageHandlerRegistry,
         messageSender: MessageSender,
         agentContext: AgentContext,
         pubKeyService: PubKeyService
@@ -41,6 +43,7 @@ export class PubKeyApi {
         const {message,keyRecord}=result
         await this.messageSender.sendMessageToBroker(message,"pubkey")
         this.pubKeyService.updateState(this.agentContext,keyRecord,PubKeyState.RequestSent)
+        return keyRecord
     }
 
     public async processResponse(message:PubKeyResponseMessage){

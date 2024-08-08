@@ -1,10 +1,8 @@
-import { Expose, Type } from 'class-transformer'
-import { IsOptional, IsString, ValidateNested } from 'class-validator'
+import { IsString } from 'class-validator'
 
 import { AgentMessage } from '../../../agent/AgentMessage'
 import { IsValidMessageType, parseMessageType } from '../../../utils/messageType'
 
-import { DidDocument } from '../../dids'
 
 export interface SignatureExchangeExchangeResponseMessageOptions {
   id?: string
@@ -33,7 +31,7 @@ export class PubKeyResponseMessage extends AgentMessage {
 
   @IsValidMessageType(PubKeyResponseMessage.type)
   public readonly type = PubKeyResponseMessage.type.messageTypeUri;
-  public static readonly type = parseMessageType('https://didcomm.org/pubkey_exchange/1.0/request');
+  public static readonly type = parseMessageType('https://didcomm.org/pubkey_exchange/1.0/response');
 
   @IsString()
   public readonly contextId?: string;
