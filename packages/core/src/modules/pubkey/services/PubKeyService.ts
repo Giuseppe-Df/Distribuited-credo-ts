@@ -69,7 +69,7 @@ export class PubKeyService {
     const key= this.hexStringToUint8Array(message.publicKey)
     const keyObj=new Key(key,KeyType.Ed25519)
     keyRecord.key=keyObj
-
+    keyRecord.state=PubKeyState.Completed
     this.update(agentContext,keyRecord)
 
   }
