@@ -75,10 +75,27 @@ export class MessageReceiver {
     await inboundTransport.stop()
   }
 
-  public async receivePubKeyResponde(inboundMessage: PubKeyResponseMessage){
-    this.logger.debug("messaggio ricevuto", inboundMessage)
-    this.pubKeyApi.processResponse(inboundMessage)
+  /**
+   * Receive and handle an inbound MQTT message. It will determine the agent context, transform the message
+   * to it's corresponding message class and finally dispatch it to the dispatcher.
+   *
+   * @param inboundMessage the message to receive and handle
+   */
+  public async receiveMessageFromBroker(inboundMessage: PlaintextMessage, contextCorrelationId?: string) {
+    this.logger.debug(`Agent received message`)
 
+    // Find agent context for the inbound message
+    const agentContext = await this.agentContextProvider.getContextForInboundMessage(inboundMessage, {
+      contextCorrelationId,
+    })
+
+    try {
+      const message = await this.transformAndValidate(agentContext, inboundMessage)
+      const messageContext = new InboundMessageContext(message, { agentContext })
+      await this.dispatcher.dispatchMessage(messageContext)
+    } catch(err) {
+      throw new CredoError("error receiving message", err)
+    }
   }
 
   /**

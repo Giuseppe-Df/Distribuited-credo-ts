@@ -8,7 +8,8 @@ import { AgentContext } from 'packages/core/src/agent'
 import { PubKeyRecordProps } from '../repository/PubKeyRecord'
 import { PubKeyRecord } from '../repository/PubKeyRecord'
 import { PubKeyState, PubKeyRole } from '../models'
-import { PubKeyRequestMessage } from '../messages'
+import { PubKeyRequestMessage, PubKeyResponseMessage } from '../messages'
+import { Key, KeyType } from '../../../crypto'
 
 @injectable()
 export class PubKeyService {
@@ -24,6 +25,17 @@ export class PubKeyService {
     this.pubKeyRepository= pubKeyRepository
     this.eventEmitter = eventEmitter
     this.logger = logger
+  }
+
+  private hexStringToUint8Array(hexString: string): Uint8Array {
+    if (hexString.length % 2 !== 0) {
+      throw new Error('Invalid hex string');
+    }
+    const arrayBuffer = new Uint8Array(hexString.length / 2);
+    for (let i = 0; i < hexString.length; i += 2) {
+      arrayBuffer[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
+    }
+    return arrayBuffer;
   }
 
   public async createRequest(agentContext:AgentContext): Promise<PubKeyProtocolMsgReturnType<PubKeyRequestMessage>> {
@@ -46,6 +58,20 @@ export class PubKeyService {
       message,
       keyRecord
     }
+  }
+
+  public async processResponse(message:PubKeyResponseMessage, agentContext:AgentContext):Promise<void>{
+    const keyRecord= await this.getByContextId(agentContext,agentContext.contextCorrelationId);
+
+    keyRecord.assertState(PubKeyState.RequestSent)
+    keyRecord.assertRole(PubKeyRole.Requester)
+
+    const key= this.hexStringToUint8Array(message.publicKey)
+    const keyObj=new Key(key,KeyType.Ed25519)
+    keyRecord.key=keyObj
+
+    this.update(agentContext,keyRecord)
+
   }
 
   public async createRecord(agentContext: AgentContext, options: PubKeyRecordProps): Promise<PubKeyRecord> {

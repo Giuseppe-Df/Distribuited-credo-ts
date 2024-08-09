@@ -34,7 +34,7 @@ export class PubKeyResponseMessage extends AgentMessage {
   public static readonly type = parseMessageType('https://didcomm.org/pubkey_exchange/1.0/response');
 
   @IsString()
-  public readonly contextId?: string;
+  public readonly contextId!: string;
 
   @IsString()
   public readonly publicKey!: string;

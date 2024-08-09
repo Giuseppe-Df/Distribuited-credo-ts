@@ -77,26 +77,19 @@ export class MqttTransport {
             agent.config.logger.debug(`Error Starting MQTT Transport`, err)
         }
 
-        this.client.on('message', (topic, message) => {
-            /*inserire logica dispatcher
-            if (topic==this.pubKeyResponse){
-                const parsedMessage=JSON.parse(message.toString())
-                messageReceiver.receivePubKeyResponde(parsedMessage)
-            }*/
-        });
-
         try{
             await this.clean()
-        }catch(err){
-            agent.config.logger.debug(`Error Inbound MQTT Topic`, err)
-        }
-
-        try{
             await this.subscribe()
             agent.config.logger.debug(`Inbound MQTT Topics Ready`)
         }catch(err){
             agent.config.logger.debug(`Error Inbound MQTT Topic`, err)
         }
+
+        this.client.on('message', (topic, message) => {
+            agent.config.logger.debug(`Received Message on topic: `+topic)
+            const parsedMessage=JSON.parse(message.toString())
+            messageReceiver.receiveMessageFromBroker(parsedMessage,agent.context.contextCorrelationId)
+        });
         
         this.client.on('close', () => {
             agent.config.logger.debug('Disconnected from MQTT broker');

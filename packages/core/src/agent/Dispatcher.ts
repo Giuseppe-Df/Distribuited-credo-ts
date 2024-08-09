@@ -141,6 +141,18 @@ class Dispatcher {
       },
     })
   }
+
+  public async dispatchMessage(messageContext: InboundMessageContext): Promise<void> {
+    const { agentContext, message } = messageContext
+
+    // Set default handler if available, middleware can still override the message handler
+    const messageHandler = this.messageHandlerRegistry.getHandlerForMessageType(message.type)
+    if (messageHandler) {
+      messageHandler.handle(messageContext)
+    }
+  }
+
+    
 }
 
 export { Dispatcher }

@@ -4,11 +4,11 @@ import { PubKeyRequestMessage } from './messages'
 import { PubKeyService } from './services'
 import { PubKeyRole,PubKeyState } from './models'
 import { PubKeyResponseMessage } from './messages/PubKeyResponseMessage'
-import { Key, KeyType } from '../../crypto'
 
 import { injectable } from '../../plugins'
 import { PubKeyRecord } from './repository'
 import { MessageHandlerRegistry } from '../../agent/MessageHandlerRegistry'
+import { PubKeyResponseHandler } from './handlers'
 
 @injectable()
 export class PubKeyApi {
@@ -25,18 +25,11 @@ export class PubKeyApi {
         this.agentContext = agentContext
         this.messageSender = messageSender
         this.pubKeyService = pubKeyService
+
+        this.registerMessageHandlers(messageHandlerRegistry)
     }
 
-    private hexStringToUint8Array(hexString: string): Uint8Array {
-        if (hexString.length % 2 !== 0) {
-          throw new Error('Invalid hex string');
-        }
-        const arrayBuffer = new Uint8Array(hexString.length / 2);
-        for (let i = 0; i < hexString.length; i += 2) {
-          arrayBuffer[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
-        }
-        return arrayBuffer;
-    }
+    
 
     public async requestPubKey(){
         const result= await this.pubKeyService.createRequest(this.agentContext)
@@ -46,16 +39,12 @@ export class PubKeyApi {
         return keyRecord
     }
 
-    public async processResponse(message:PubKeyResponseMessage){
-    
-        const key= this.hexStringToUint8Array(message.publicKey)
-        const keyObj=new Key(key,KeyType.Ed25519)
-        const keyRecord = await this.pubKeyService.createRecord(this.agentContext, {
-            key: keyObj,
-            contextId: this.agentContext.contextCorrelationId,
-            role:PubKeyRole.Requester,
-            state:PubKeyState.ResponseReceived        
-        })
-    }
+    private registerMessageHandlers(messageHandlerRegistry: MessageHandlerRegistry) {
+        messageHandlerRegistry.registerMessageHandler(
+          new PubKeyResponseHandler(
+            this.pubKeyService
+          )
+        )
+      }
 
 }

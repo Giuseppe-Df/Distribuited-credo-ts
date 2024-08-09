@@ -5,8 +5,8 @@ import { Protocol } from '../../agent/models'
 
 import { PubKeyApi } from './PubKeyApi'
 import { PubKeyRole, PubKeyState } from './models'
-//import { PubKeyRepository } from './repository'
-//import { PubKeyService} from './services'
+import { PubKeyRepository } from './repository'
+import { PubKeyService} from './services'
 
 export class PubKeyModule implements Module {
   public readonly api = PubKeyApi
@@ -18,10 +18,10 @@ export class PubKeyModule implements Module {
   public register(dependencyManager: DependencyManager, featureRegistry: FeatureRegistry) {
 
     // Services
-    //dependencyManager.registerSingleton(PubKeyService)
+    dependencyManager.registerSingleton(PubKeyService)
 
     // Repositories
-    //dependencyManager.registerSingleton(PubKeyRepository)
+    dependencyManager.registerSingleton(PubKeyRepository)
 
     // Features
     featureRegistry.register(
