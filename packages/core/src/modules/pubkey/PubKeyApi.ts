@@ -29,14 +29,16 @@ export class PubKeyApi {
         this.registerMessageHandlers(messageHandlerRegistry)
     }
 
-    
-
     public async requestPubKey(){
         const result= await this.pubKeyService.createRequest(this.agentContext)
         const {message,keyRecord}=result
-        await this.messageSender.sendMessageToBroker(message,"pubkey")
+        await this.messageSender.sendMessageToBroker(message)
         this.pubKeyService.updateState(this.agentContext,keyRecord,PubKeyState.RequestSent)
         return keyRecord
+    }
+
+    public async returnWhenIsObtained(pubKeyId: string, options?: { timeoutMs: number }){
+      return this.pubKeyService.returnWhenIsObtained(this.agentContext, pubKeyId, options?.timeoutMs)
     }
 
     private registerMessageHandlers(messageHandlerRegistry: MessageHandlerRegistry) {

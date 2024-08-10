@@ -1,4 +1,4 @@
-import type { ConnectionRecord, CredentialExchangeRecord, ProofExchangeRecord } from '@credo-ts/core'
+import type { ConnectionRecord, CredentialExchangeRecord, ProofExchangeRecord, PubKeyRecord } from '@credo-ts/core'
 
 import { BaseAgent } from './BaseAgent'
 import { greenText, Output, redText } from './OutputClass'
@@ -20,7 +20,9 @@ export class Alice extends BaseAgent {
   }
 
   public async pubKeyRequest(): Promise<void>{
-    await this.agent.pubkey.requestPubKey()
+    const keyRecord = await this.agent.pubkey.requestPubKey()
+    await this.waitForPublicKey(keyRecord)
+
   }
 
   private async getConnectionRecord() {
@@ -43,6 +45,10 @@ export class Alice extends BaseAgent {
     this.connected = true
     console.log(greenText(Output.ConnectionEstablished))
     return connectionRecord.id
+  }
+
+  private async waitForPublicKey(pubKeyRecord: PubKeyRecord) {
+    await this.agent.pubkey.returnWhenIsObtained(pubKeyRecord.id)
   }
 
   public async acceptConnection(invitation_url: string) {

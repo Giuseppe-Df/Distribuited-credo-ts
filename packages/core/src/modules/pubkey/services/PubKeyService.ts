@@ -3,13 +3,18 @@ import type { AgentMessage } from '../../../agent/AgentMessage'
 import { inject, injectable } from '../../../plugins'
 import { PubKeyRepository } from '../repository/PubKeyRepository'
 import { InjectionSymbols } from '../../../constants'
+import { first, map, timeout } from 'rxjs/operators'
 import { EventEmitter } from '../../../agent/EventEmitter'
+import { filterContextCorrelationId } from '../../../agent/Events'
 import { AgentContext } from 'packages/core/src/agent'
 import { PubKeyRecordProps } from '../repository/PubKeyRecord'
 import { PubKeyRecord } from '../repository/PubKeyRecord'
 import { PubKeyState, PubKeyRole } from '../models'
 import { PubKeyRequestMessage, PubKeyResponseMessage } from '../messages'
 import { Key, KeyType } from '../../../crypto'
+import type { PubKeyStateChangedEvent } from '../PubKeyEvents'
+import { PubKeyEventTypes } from '../PubKeyEvents'
+import { firstValueFrom, ReplaySubject } from 'rxjs'
 
 @injectable()
 export class PubKeyService {
@@ -39,15 +44,18 @@ export class PubKeyService {
   }
 
   public async createRequest(agentContext:AgentContext): Promise<PubKeyProtocolMsgReturnType<PubKeyRequestMessage>> {
+    this.logger.debug("Creating Public Key Request")
     const pubKey= await this.getByContextId(agentContext,agentContext.contextCorrelationId)
     let keyRecord: PubKeyRecord
     if(!pubKey){
+        this.logger.debug("No Exisisting Public Key Found")
         keyRecord = await this.createRecord(agentContext, {
             contextId: agentContext.contextCorrelationId,
             role:PubKeyRole.Requester,
             state:PubKeyState.Start      
         })    
     }else{
+        this.logger.debug("Resetting the exisisting Public Key")
         pubKey.state=PubKeyState.Start
         pubKey.key=undefined
         keyRecord=pubKey
@@ -107,6 +115,52 @@ export class PubKeyService {
    */
   public async getByContextId(agentContext: AgentContext, contextId: string): Promise<PubKeyRecord> {
     return this.pubKeyRepository.getByContextId(agentContext, contextId)
+  }
+
+  /**
+   * Retrieve a pubKey record by id
+   *
+   * @param pubkeyId The connection record id
+   * @throws {RecordNotFoundError} If no record is found
+   * @return The pubkey record
+   *
+   */
+  public getById(agentContext: AgentContext, pubkeyId: string): Promise<PubKeyRecord> {
+    return this.pubKeyRepository.getById(agentContext, pubkeyId)
+  }
+
+  public async returnWhenIsObtained(
+    agentContext: AgentContext,
+    pubKeyId: string,
+    timeoutMs = 20000
+  ){
+    const isObtained = (pubKey: PubKeyRecord) => {
+      return pubKey.id === pubKeyId && pubKey.state === PubKeyState.Completed
+    }
+
+    const observable = this.eventEmitter.observable<PubKeyStateChangedEvent>(
+      PubKeyEventTypes.PubKeyStateChanged
+    )
+    const subject = new ReplaySubject<PubKeyRecord>(1)
+
+    observable
+      .pipe(
+        filterContextCorrelationId(agentContext.contextCorrelationId),
+        map((e) => e.payload.connectionRecord),
+        first(isObtained), // Do not wait for longer than specified timeout
+        timeout({
+          first: timeoutMs,
+          meta: 'ConnectionService.returnWhenIsConnected',
+        })
+      )
+      .subscribe(subject)
+
+    const pubKey = await this.getById(agentContext, pubKeyId)
+    if (isObtained(pubKey)) {
+      subject.next(pubKey)
+    }
+
+    return firstValueFrom(subject)
   }
 
 }

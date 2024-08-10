@@ -75,7 +75,6 @@ export class AliceInquirer extends BaseInquirer {
 
   public async publicKey(){
     await this.alice.pubKeyRequest()
-    //inserire codice per aspettare la chiave 
   }
 
   public async acceptCredentialOffer(credentialRecord: CredentialExchangeRecord) {
