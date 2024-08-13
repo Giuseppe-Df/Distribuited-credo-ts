@@ -21,12 +21,6 @@ export class PubKeyResponseHandler implements MessageHandler {
 
   public async handle(messageContext: MessageHandlerInboundMessage<PubKeyResponseHandler>) {
     const { message } = messageContext
-
-    // Query by contextId
-    const pubKeyRecord = await this.pubKeyService.getByContextId(messageContext.agentContext,message.contextId)
-    if (!pubKeyRecord) {
-      throw new CredoError(`Context Public Key not found!`)
-    }
     
     await this.pubKeyService.processResponse(message,messageContext.agentContext)
     

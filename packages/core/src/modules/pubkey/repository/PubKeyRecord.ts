@@ -1,17 +1,14 @@
 import type { TagsBase } from '../../../storage/BaseRecord'
 
-import { Transform } from 'class-transformer'
-
 import { CredoError } from '../../../error'
 import { BaseRecord } from '../../../storage/BaseRecord'
 import { uuid } from '../../../utils/uuid'
-import { Key } from 'packages/core/src/crypto'
 import { PubKeyRole, PubKeyState } from '../models'
 
 
 export interface PubKeyRecordProps {
   id?: string
-  key?: Key
+  key?: String
   contextId: string
   role: PubKeyRole
   state: PubKeyState
@@ -19,14 +16,15 @@ export interface PubKeyRecordProps {
 
 export type CustomPubKeyTags = TagsBase
 export type DefaultPubKeyTags = {
-  contextId: string
+  contextId: string,
+  id: string
 }
 
 export class PubKeyRecord extends BaseRecord<DefaultPubKeyTags, CustomPubKeyTags> {
   public state!: PubKeyState
   public role!: PubKeyRole
 
-  public key?: Key
+  public key?: String
   public contextId!: string
 
   public static readonly type = 'PubKeyRecord'
@@ -48,6 +46,7 @@ export class PubKeyRecord extends BaseRecord<DefaultPubKeyTags, CustomPubKeyTags
     return {
       ...this._tags,
       contextId: this.contextId,
+      id:this.id,
     }
   }
 

@@ -15,7 +15,7 @@ import { Key, KeyType } from '../../../crypto'
 import type { PubKeyStateChangedEvent } from '../PubKeyEvents'
 import { PubKeyEventTypes } from '../PubKeyEvents'
 import { firstValueFrom, ReplaySubject } from 'rxjs'
-
+import {CredoError} from '../../../error'
 @injectable()
 export class PubKeyService {
   private pubKeyRepository: PubKeyRepository
@@ -47,19 +47,19 @@ export class PubKeyService {
     this.logger.debug("Creating Public Key Request")
     const pubKey= await this.getByContextId(agentContext,agentContext.contextCorrelationId)
     let keyRecord: PubKeyRecord
-    if(!pubKey){
-        this.logger.debug("No Exisisting Public Key Found")
-        keyRecord = await this.createRecord(agentContext, {
-            contextId: agentContext.contextCorrelationId,
-            role:PubKeyRole.Requester,
-            state:PubKeyState.Start      
-        })    
+
+    if (pubKey){
+      this.logger.debug("Resetting the exisisting Public Key")
+      this.delete(agentContext,pubKey)
     }else{
-        this.logger.debug("Resetting the exisisting Public Key")
-        pubKey.state=PubKeyState.Start
-        pubKey.key=undefined
-        keyRecord=pubKey
+      this.logger.debug("No Exisisting Public Key Found")
     }
+
+    keyRecord = await this.createRecord(agentContext, {
+        contextId: agentContext.contextCorrelationId,
+        role:PubKeyRole.Requester,
+        state:PubKeyState.Start      
+    })    
     const message = new PubKeyRequestMessage({contextId:agentContext.contextCorrelationId})
     
     return {
@@ -71,14 +71,21 @@ export class PubKeyService {
   public async processResponse(message:PubKeyResponseMessage, agentContext:AgentContext):Promise<void>{
     const keyRecord= await this.getByContextId(agentContext,agentContext.contextCorrelationId);
 
-    keyRecord.assertState(PubKeyState.RequestSent)
-    keyRecord.assertRole(PubKeyRole.Requester)
-
-    const key= this.hexStringToUint8Array(message.publicKey)
-    const keyObj=new Key(key,KeyType.Ed25519)
-    keyRecord.key=keyObj
-    keyRecord.state=PubKeyState.Completed
-    this.update(agentContext,keyRecord)
+    if (keyRecord&&message.publicKey){
+      keyRecord.assertState(PubKeyState.RequestSent)
+      keyRecord.assertRole(PubKeyRole.Requester)
+      
+      const previusState=keyRecord.state
+      /*const key= this.hexStringToUint8Array(message.publicKey)
+      const keyObj=new Key(key,KeyType.Ed25519)
+      keyRecord.key=keyObj*/
+      keyRecord.key=message.publicKey
+      keyRecord.state=PubKeyState.Completed
+      this.update(agentContext,keyRecord)
+      this.emitStateChangedEvent(agentContext,keyRecord,previusState)
+    }else{
+      throw new CredoError("Response Error")
+    }
 
   }
 
@@ -100,6 +107,21 @@ export class PubKeyService {
     return this.pubKeyRepository.update(agentContext, pubKeyRecord)
   }
 
+  private emitStateChangedEvent(
+    agentContext: AgentContext,
+    pubKeyRecord: PubKeyRecord,
+    previousState:PubKeyState | null
+  ) {
+    this.eventEmitter.emit<PubKeyStateChangedEvent>(agentContext, {
+      type: PubKeyEventTypes.PubKeyStateChanged,
+      payload: {
+        // Connection record in event should be static
+        pubKeyRecord: pubKeyRecord.clone(),
+        previousState,
+      },
+    })
+  }
+
   /**
    * Retrieve all pubKey records
    *
@@ -113,7 +135,7 @@ export class PubKeyService {
    * Retrieve a pubKey record by context id
    *
    */
-  public async getByContextId(agentContext: AgentContext, contextId: string): Promise<PubKeyRecord> {
+  public async getByContextId(agentContext: AgentContext, contextId: string): Promise<PubKeyRecord|null> {
     return this.pubKeyRepository.getByContextId(agentContext, contextId)
   }
 
@@ -127,6 +149,16 @@ export class PubKeyService {
    */
   public getById(agentContext: AgentContext, pubkeyId: string): Promise<PubKeyRecord> {
     return this.pubKeyRepository.getById(agentContext, pubkeyId)
+  }
+
+  /**
+   * Delete a pubKey record
+   *
+   * @param pubkeyRecord The record to delete
+   *
+   */
+  private delete(agentContext: AgentContext, pubkeyRecord: PubKeyRecord) {
+    this.pubKeyRepository.delete(agentContext, pubkeyRecord)
   }
 
   public async returnWhenIsObtained(
@@ -146,11 +178,11 @@ export class PubKeyService {
     observable
       .pipe(
         filterContextCorrelationId(agentContext.contextCorrelationId),
-        map((e) => e.payload.connectionRecord),
+        map((e) => e.payload.pubKeyRecord),
         first(isObtained), // Do not wait for longer than specified timeout
         timeout({
           first: timeoutMs,
-          meta: 'ConnectionService.returnWhenIsConnected',
+          meta: 'PubKeyService.returnWhenIsObtained',
         })
       )
       .subscribe(subject)

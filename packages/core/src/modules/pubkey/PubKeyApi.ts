@@ -29,13 +29,23 @@ export class PubKeyApi {
         this.registerMessageHandlers(messageHandlerRegistry)
     }
 
+    /* SCRIPT PER ELIMINARE I RECORD
+    const records =await this.pubKeyService.getAll(this.agentContext)
+        for (const record of records){
+          this.pubKeyService.delete(this.agentContext,record)
+        }
+        const recordsnew=await this.pubKeyService.getAll(this.agentContext)
+        this.agentContext.config.logger.debug("record attuali",recordsnew)
+    */
+
     public async requestPubKey(){
         const result= await this.pubKeyService.createRequest(this.agentContext)
         const {message,keyRecord}=result
         await this.messageSender.sendMessageToBroker(message)
-        this.pubKeyService.updateState(this.agentContext,keyRecord,PubKeyState.RequestSent)
+        await this.pubKeyService.updateState(this.agentContext,keyRecord,PubKeyState.RequestSent)
         return keyRecord
     }
+
 
     public async returnWhenIsObtained(pubKeyId: string, options?: { timeoutMs: number }){
       return this.pubKeyService.returnWhenIsObtained(this.agentContext, pubKeyId, options?.timeoutMs)

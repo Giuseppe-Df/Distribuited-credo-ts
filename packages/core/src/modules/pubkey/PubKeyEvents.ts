@@ -9,7 +9,7 @@ export enum PubKeyEventTypes {
 export interface PubKeyStateChangedEvent extends BaseEvent {
   type: typeof PubKeyEventTypes.PubKeyStateChanged
   payload: {
-    connectionRecord: PubKeyRecord
+    pubKeyRecord: PubKeyRecord
     previousState: PubKeyState | null
   }
 }

@@ -86,7 +86,7 @@ export class MqttTransport {
         }
 
         this.client.on('message', (topic, message) => {
-            agent.config.logger.debug(`Received Message on topic: `+topic)
+            agent.config.logger.debug(`Received Message on topic: `+topic+" "+message.toString())
             const parsedMessage=JSON.parse(message.toString())
             messageReceiver.receiveMessageFromBroker(parsedMessage,agent.context.contextCorrelationId)
         });
