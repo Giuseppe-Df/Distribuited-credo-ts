@@ -45,7 +45,7 @@ export class PubKeyService {
 
   public async createRequest(agentContext:AgentContext): Promise<PubKeyProtocolMsgReturnType<PubKeyRequestMessage>> {
     this.logger.debug("Creating Public Key Request")
-    const pubKey= await this.getByContextId(agentContext,agentContext.contextCorrelationId)
+    const pubKey= await this.findByContextId(agentContext,agentContext.contextCorrelationId)
     let keyRecord: PubKeyRecord
 
     if (pubKey){
@@ -69,7 +69,7 @@ export class PubKeyService {
   }
 
   public async processResponse(message:PubKeyResponseMessage, agentContext:AgentContext):Promise<void>{
-    const keyRecord= await this.getByContextId(agentContext,agentContext.contextCorrelationId);
+    const keyRecord= await this.findByContextId(agentContext,agentContext.contextCorrelationId);
 
     if (keyRecord&&message.publicKey){
       keyRecord.assertState(PubKeyState.RequestSent)
@@ -87,6 +87,16 @@ export class PubKeyService {
       throw new CredoError("Response Error")
     }
 
+  }
+
+  public async getPublicKey (agentContext:AgentContext):Promise<Key>{
+    const publicKeyRecord = await this.getByContextId(agentContext,agentContext.contextCorrelationId)
+    const {key}= publicKeyRecord
+    if (!key){
+      throw new CredoError("The agent has no associated public key")
+    }
+    const Uint8Key = this.hexStringToUint8Array(key)
+    return Key.fromPublicKey(Uint8Key,KeyType.Ed25519)
   }
 
   public async createRecord(agentContext: AgentContext, options: PubKeyRecordProps): Promise<PubKeyRecord> {
@@ -132,11 +142,19 @@ export class PubKeyService {
   }
 
   /**
+   * Retrieve a pubKey record by context id or throw an error
+   *
+   */
+  public async getByContextId(agentContext: AgentContext, contextId: string): Promise<PubKeyRecord> {
+    return this.pubKeyRepository.getByContextId(agentContext, contextId)
+  }
+
+  /**
    * Retrieve a pubKey record by context id
    *
    */
-  public async getByContextId(agentContext: AgentContext, contextId: string): Promise<PubKeyRecord|null> {
-    return this.pubKeyRepository.getByContextId(agentContext, contextId)
+  public async findByContextId(agentContext: AgentContext, contextId: string): Promise<PubKeyRecord|null> {
+    return this.pubKeyRepository.findByContextId(agentContext, contextId)
   }
 
   /**

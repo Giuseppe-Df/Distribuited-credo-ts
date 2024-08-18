@@ -110,10 +110,10 @@ export class ConnectionsApi {
     }
 
     // Only generate routing if ourDid hasn't been provided
-    // Punto in cui viene generata la chiave
     let routing = config.routing
     if (!routing && !ourDid) {
-      routing = await this.routingService.getRouting(this.agentContext, { mediatorId: outOfBandRecord.mediatorId })
+      routing = await this.routingService.getRouting(this.agentContext, { mediatorId: outOfBandRecord.mediatorId },this.config.useRemoteKeyExchangeProtocol)
+      this.agentContext.config.logger.debug("routing",routing)
     }
 
     let result

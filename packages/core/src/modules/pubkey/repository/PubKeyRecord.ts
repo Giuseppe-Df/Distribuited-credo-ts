@@ -8,7 +8,7 @@ import { PubKeyRole, PubKeyState } from '../models'
 
 export interface PubKeyRecordProps {
   id?: string
-  key?: String
+  key?: string
   contextId: string
   role: PubKeyRole
   state: PubKeyState
@@ -24,7 +24,7 @@ export class PubKeyRecord extends BaseRecord<DefaultPubKeyTags, CustomPubKeyTags
   public state!: PubKeyState
   public role!: PubKeyRole
 
-  public key?: String
+  public key?: string
   public contextId!: string
 
   public static readonly type = 'PubKeyRecord'

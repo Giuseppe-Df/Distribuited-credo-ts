@@ -23,9 +23,12 @@ export class PubKeyRepository extends Repository<PubKeyRecord> {
     return this.getSingleByQuery(agentContext, { id })
   }
 
-  public getByContextId(agentContext: AgentContext, contextId: string): Promise<PubKeyRecord|null> {
-    return this.findSingleByQuery(agentContext, { contextId })
+  public getByContextId(agentContext: AgentContext, contextId: string): Promise<PubKeyRecord> {
+    return this.getSingleByQuery(agentContext, { contextId })
   }
 
+  public findByContextId(agentContext: AgentContext, contextId: string): Promise<PubKeyRecord|null> {
+    return this.findSingleByQuery(agentContext, { contextId })
+  }
 
 }

@@ -104,6 +104,7 @@ function getAskarAnonCredsIndyModules() {
     pubkey: new PubKeyModule(),
     connections: new ConnectionsModule({
       autoAcceptConnections: true,
+      useRemoteKeyExchangeProtocol:true,
     }),
     credentials: new CredentialsModule({
       autoAcceptCredentials: AutoAcceptCredential.ContentApproved,

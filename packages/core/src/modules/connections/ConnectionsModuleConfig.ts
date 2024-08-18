@@ -1,3 +1,4 @@
+import { getThreadIdFromPlainTextMessage } from '../../utils/thread'
 import { PeerDidNumAlgo } from '../dids'
 
 /**
@@ -17,6 +18,15 @@ export interface ConnectionsModuleConfigOptions {
   autoAcceptConnections?: boolean
 
   /**
+   * Whether the agent should use the protocol to exchange information with the remote device that holds
+   * the agent's private key. If set to true, the agent will initiate communication with the remote device
+   * for cryptographic operations.
+   *
+   * @default false
+   */
+  useRemoteKeyExchangeProtocol?:boolean
+
+  /**
    * Peer did num algo to use in requests for DID exchange protocol (RFC 0023). It will be also used by default
    * in responses in case that the request does not use a peer did.
    *
@@ -34,6 +44,7 @@ export interface ConnectionsModuleConfigOptions {
 
 export class ConnectionsModuleConfig {
   #autoAcceptConnections?: boolean
+  #useRemoteKeyExchangeProtocol?: boolean
   #peerNumAlgoForDidExchangeRequests?: PeerDidNumAlgo
   #peerNumAlgoForDidRotation?: PeerDidNumAlgo.MultipleInceptionKeyWithoutDoc | PeerDidNumAlgo.ShortFormAndLongForm
 
@@ -42,6 +53,7 @@ export class ConnectionsModuleConfig {
   public constructor(options?: ConnectionsModuleConfigOptions) {
     this.options = options ?? {}
     this.#autoAcceptConnections = this.options.autoAcceptConnections
+    this.#useRemoteKeyExchangeProtocol=this.options.useRemoteKeyExchangeProtocol
     this.#peerNumAlgoForDidExchangeRequests = this.options.peerNumAlgoForDidExchangeRequests
     this.#peerNumAlgoForDidRotation = this.options.peerNumAlgoForDidRotation
   }
@@ -54,6 +66,16 @@ export class ConnectionsModuleConfig {
   /** See {@link ConnectionsModuleConfigOptions.autoAcceptConnections} */
   public set autoAcceptConnections(autoAcceptConnections: boolean) {
     this.#autoAcceptConnections = autoAcceptConnections
+  }
+
+  /** See {@link ConnectionsModuleConfigOptions.useRemoteKeyExchangeProtocol} */
+  public get useRemoteKeyExchangeProtocol() {
+    return this.#useRemoteKeyExchangeProtocol ?? false
+  }
+
+  /** See {@link ConnectionsModuleConfigOptions.useRemoteKeyExchangeProtocol} */
+  public set useRemoteKeyExchangeProtocol(useRemoteKeyExchangeProtocol: boolean) {
+    this.#useRemoteKeyExchangeProtocol = useRemoteKeyExchangeProtocol
   }
 
   /** See {@link ConnectionsModuleConfigOptions.peerNumAlgoForDidExchangeRequests} */

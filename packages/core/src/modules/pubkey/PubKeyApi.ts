@@ -46,6 +46,10 @@ export class PubKeyApi {
         return keyRecord
     }
 
+    public async getPublicKey(){
+      return this.pubKeyService.getPublicKey(this.agentContext)
+    }
+
 
     public async returnWhenIsObtained(pubKeyId: string, options?: { timeoutMs: number }){
       return this.pubKeyService.returnWhenIsObtained(this.agentContext, pubKeyId, options?.timeoutMs)

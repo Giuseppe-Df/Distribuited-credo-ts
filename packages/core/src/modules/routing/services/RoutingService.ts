@@ -1,5 +1,5 @@
 import type { AgentContext } from '../../../agent'
-import type { Key } from '../../../crypto'
+import { Key } from '../../../crypto'
 import type { Routing } from '../../connections'
 import type { RoutingCreatedEvent } from '../RoutingEvents'
 
@@ -7,6 +7,7 @@ import { EventEmitter } from '../../../agent/EventEmitter'
 import { KeyType } from '../../../crypto'
 import { injectable } from '../../../plugins'
 import { RoutingEventTypes } from '../RoutingEvents'
+import { PubKeyApi } from '../../pubkey'
 
 import { MediationRecipientService } from './MediationRecipientService'
 
@@ -16,18 +17,31 @@ export class RoutingService {
 
   private eventEmitter: EventEmitter
 
-  public constructor(mediationRecipientService: MediationRecipientService, eventEmitter: EventEmitter) {
+  private pubKeyApi: PubKeyApi
+
+  public constructor(mediationRecipientService: MediationRecipientService, eventEmitter: EventEmitter, pubKeyApi: PubKeyApi) {
     this.mediationRecipientService = mediationRecipientService
 
     this.eventEmitter = eventEmitter
+
+    this.pubKeyApi=pubKeyApi
   }
 
   public async getRouting(
     agentContext: AgentContext,
-    { mediatorId, useDefaultMediator = true }: GetRoutingOptions = {}
+    { mediatorId, useDefaultMediator = true }: GetRoutingOptions = {},
+    useRemoteKeyExchangeProtocol: boolean = false
   ): Promise<Routing> {
-    // Create and store new key
-    const recipientKey = await agentContext.wallet.createKey({ keyType: KeyType.Ed25519 })
+
+    let recipientKey
+    if (!useRemoteKeyExchangeProtocol){
+      // Create and store new key
+      recipientKey = await agentContext.wallet.createKey({ keyType: KeyType.Ed25519 })
+    }else{
+      //Retrieve key from PublicKeyApi
+      recipientKey= await this.pubKeyApi.getPublicKey()
+    }
+
     let routing: Routing = {
       endpoints: agentContext.config.endpoints,
       routingKeys: [],
