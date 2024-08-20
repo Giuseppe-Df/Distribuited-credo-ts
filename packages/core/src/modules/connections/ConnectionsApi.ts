@@ -124,7 +124,7 @@ export class ConnectionsApi {
         routing,
         autoAcceptConnection,
         ourDid,
-      })
+      }, this.config.useRemoteKeyExchangeProtocol)
     } else if (protocol === HandshakeProtocol.Connections) {
       if (ourDid) {
         throw new CredoError('Using an externally defined did for connections protocol is unsupported')
@@ -147,12 +147,14 @@ export class ConnectionsApi {
     }
 
     const { message, connectionRecord } = result
-    const outboundMessageContext = new OutboundMessageContext(message, {
-      agentContext: this.agentContext,
-      connection: connectionRecord,
-      outOfBand: outOfBandRecord,
-    })
-    await this.messageSender.sendMessage(outboundMessageContext)
+    if (message){
+      const outboundMessageContext = new OutboundMessageContext(message, {
+        agentContext: this.agentContext,
+        connection: connectionRecord,
+        outOfBand: outOfBandRecord,
+      })
+      await this.messageSender.sendMessage(outboundMessageContext)
+    }
     return connectionRecord
   }
 

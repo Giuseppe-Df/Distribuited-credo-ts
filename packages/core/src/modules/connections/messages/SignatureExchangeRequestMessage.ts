@@ -10,8 +10,8 @@ import { DidDocument } from '../../dids'
 export interface SignatureExchangeExchangeRequestMessageOptions {
   id?: string
   label: string
-  didDoc: DidDocument
-  connectionId:string
+  data: string
+  dataId:string
 }
 
 /**
@@ -30,8 +30,8 @@ export class SignatureExchangeRequestMessage extends AgentMessage {
     if (options) {
       this.id = options.id || this.generateId();
       this.label = options.label;
-      this.connectionId = options.connectionId;
-      this.didDoc = options.didDoc;
+      this.dataId = options.dataId;
+      this.data = options.data;
     }
   }
 
@@ -42,11 +42,9 @@ export class SignatureExchangeRequestMessage extends AgentMessage {
   @IsString()
   public readonly label?: string;
 
-  @Expose({ name: 'did_doc' })
-  @Type(() => DidDocument)
-  @ValidateNested()
-  public didDoc?: DidDocument; 
+  @IsString()
+  public data?: string; 
 
   @IsString()
-  public readonly connectionId?: string;
+  public readonly dataId?: string;
 }

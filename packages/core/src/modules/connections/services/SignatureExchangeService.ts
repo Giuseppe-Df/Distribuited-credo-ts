@@ -6,27 +6,148 @@ import { InjectionSymbols } from '../../../constants'
 import { EventEmitter } from '../../../agent/EventEmitter'
 import type { SignatureExchangeRecordProps } from '../repository/SignatureExchangeRecord'
 import { SignatureExchangeRecord } from '../repository/SignatureExchangeRecord'
+import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
+import { TypedArrayEncoder, isDid, Buffer } from '../../../utils'
+import { JsonEncoder } from '../../../utils/JsonEncoder'
+import { JwaSignatureAlgorithm } from '../../../crypto/jose/jwa'
+import { getJwkFromKey } from '../../../crypto/jose/jwk'
+import { CredoError } from 'packages/core/src/error'
+import {JwsProtectedHeaderOptions} from '../../../crypto/JwsTypes'
+import { PubKeyApi } from '../../pubkey'
+import { DidExchangeRequestMessage } from '../messages'
+import { DidDocument } from '../../dids'
+import { SignatureExchangeRole, SignatureExchangeState } from '../models'
+import type { AgentMessage } from '../../../agent/AgentMessage'
+import { SignatureExchangeRequestMessage} from '../messages/SignatureExchangeRequestMessage'
 
 
 @injectable()
 export class SignatureExchangeService {
   private signatureExchangeRepository: SignatureExchangeRepository
+  private pubKeyApi: PubKeyApi
   private logger: Logger
   private eventEmitter: EventEmitter
 
   public constructor(
     @inject(InjectionSymbols.Logger) logger: Logger,
     signatureExchangeRepository:SignatureExchangeRepository,
+    pubKeyApi: PubKeyApi,
     eventEmitter: EventEmitter
   ) {
     this.signatureExchangeRepository = signatureExchangeRepository
+    this.pubKeyApi = pubKeyApi
     this.eventEmitter = eventEmitter
     this.logger = logger
   }
 
-  public async createRequest(agentContext: AgentContext, options: SignatureExchangeRecordProps): Promise<SignatureExchangeRecord> {
+  public async createRecord(agentContext: AgentContext, options: SignatureExchangeRecordProps): Promise<SignatureExchangeRecord> {
     const signatureExchangeRecord = new SignatureExchangeRecord(options)
     await this.signatureExchangeRepository.save(agentContext, signatureExchangeRecord)
     return signatureExchangeRecord
   }
+
+  public async createRequest(agentContext: AgentContext, options: CreateSignatureRequestOptions ): Promise<SignatureExchangeProtocolMsgReturnType<SignatureExchangeRequestMessage>> {
+
+    const key = await this.pubKeyApi.getPublicKey()
+
+    const data = options.didDocument.toJSON()
+    const payload = JsonEncoder.toBuffer(data)
+    const base64Payload = TypedArrayEncoder.toBase64URL(payload)
+    const base64UrlProtectedHeader = JsonEncoder.toBase64URL(this.buildProtected({
+      alg: JwaSignatureAlgorithm.EdDSA,
+      jwk: getJwkFromKey(key),
+    }))
+
+    const signatureRecord = await this.createRecord(agentContext,{
+      message: options.message,
+      connectionId: options.connectionId,
+      state: SignatureExchangeState.Start,
+      role: SignatureExchangeRole.Requester,
+      didDocument: options.didDocument,
+      base64Payload,
+      base64UrlProtectedHeader
+    })
+
+    //dataToSign è di tipo Buffer
+    //const dataToSign = TypedArrayEncoder.fromString(`${base64UrlProtectedHeader}.${base64Payload}`)
+    const dataToSign = `${base64UrlProtectedHeader}.${base64Payload}`
+
+    const label = agentContext.config.label
+    const message= new SignatureExchangeRequestMessage({label,data:dataToSign,dataId:signatureRecord.id})
+
+    return {message,signatureRecord}
+
+  }
+
+  public async processResponse():Promise<void>{
+    
+    /* data rappresenta didDocument.toJSON()
+    const signedAttach = new Attachment({
+      mimeType: typeof data === 'string' ? undefined : 'application/json',
+      data: new AttachmentData({
+        base64:
+          typeof data === 'string' ? TypedArrayEncoder.toBase64URL(Buffer.from(data)) : JsonEncoder.toBase64(data),
+      }),
+    })
+    
+    funzione per crere il jws di tipo JwsGeneralFormat
+    const kid = new DidKey(key).did
+    const jws = {
+      protected: base64UrlProtectedHeader,
+      signature,
+      header: {kid,},
+      payload: base64Payload,
+    }
+    
+    signedAttach.addJws(jws)
+
+    message.didDoc=signedAttachment
+    
+
+    
+    */
+
+    
+
+  }
+
+  private buildProtected(options: JwsProtectedHeaderOptions) {
+    if (!options.jwk && !options.kid) {
+      throw new CredoError('Both JWK and kid are undefined. Please provide one or the other.')
+    }
+    if (options.jwk && options.kid) {
+      throw new CredoError('Both JWK and kid are provided. Please only provide one of the two.')
+    }
+
+    return {
+      ...options,
+      alg: options.alg,
+      jwk: options.jwk?.toJson(),
+      kid: options.kid,
+    }
+  }
+
+  public async updateState(agentContext: AgentContext, signatureRecord: SignatureExchangeRecord, newState: SignatureExchangeState) {
+    const previousState = signatureRecord.state
+    signatureRecord.state = newState
+    await this.signatureExchangeRepository.update(agentContext, signatureRecord)
+
+    //this.emitStateChangedEvent(agentContext, connectionRecord, previousState)
+  }
+
+  public update(agentContext: AgentContext, signatureRecord: SignatureExchangeRecord) {
+    return this.signatureExchangeRepository.update(agentContext, signatureRecord)
+  }
+
+}
+
+export interface CreateSignatureRequestOptions {
+  message: DidExchangeRequestMessage
+  connectionId: string,
+  didDocument: DidDocument
+}
+
+export interface SignatureExchangeProtocolMsgReturnType<MessageType extends AgentMessage> {
+  message: MessageType
+  signatureRecord: SignatureExchangeRecord
 }

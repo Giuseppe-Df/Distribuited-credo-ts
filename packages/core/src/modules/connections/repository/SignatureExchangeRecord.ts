@@ -8,6 +8,7 @@ import { uuid } from '../../../utils/uuid'
 
 import { DidExchangeRequestMessage} from '../messages'
 import { SignatureExchangeRole, SignatureExchangeState } from '../models'
+import { DidDocument } from '../../dids'
 
 
 export interface SignatureExchangeRecordProps {
@@ -16,14 +17,16 @@ export interface SignatureExchangeRecordProps {
     createdAt?: Date
     message: DidExchangeRequestMessage
     connectionId: string
-    contextId: string
     state: SignatureExchangeState
     role: SignatureExchangeRole
+    didDocument: DidDocument
+    base64Payload: string
+    base64UrlProtectedHeader: string
 }
 
 export type CustomSignatureExchangeTags = TagsBase
 export type DefaultSignatureExchangeTags = {
-    contextId: string
+    id: string
 }
 
 export class SignatureExchangeRecord extends BaseRecord<DefaultSignatureExchangeTags, CustomSignatureExchangeTags> {
@@ -31,7 +34,9 @@ export class SignatureExchangeRecord extends BaseRecord<DefaultSignatureExchange
     public role!: SignatureExchangeRole
     public message!: DidExchangeRequestMessage
     public connectionId!: string
-    public contextId!: string
+    public didDocument!: DidDocument
+    public base64Payload!: string
+    public base64UrlProtectedHeader!: string
 
     public static readonly type = 'SignatureExchange'
     public readonly type = SignatureExchangeRecord.type
@@ -47,14 +52,16 @@ export class SignatureExchangeRecord extends BaseRecord<DefaultSignatureExchange
           this._tags = props.tags ?? {}
           this.message = props.message
           this.connectionId = props.connectionId
-          this.contextId = props.contextId
+          this.didDocument = props.didDocument
+          this.base64Payload = props.base64Payload
+          this.base64UrlProtectedHeader = props.base64UrlProtectedHeader
         }
     }
 
     public getTags(): DefaultSignatureExchangeTags & CustomSignatureExchangeTags {
         return {
           ...this._tags,
-          contextId: this.contextId,
+          id: this.id,
         }
     }
 

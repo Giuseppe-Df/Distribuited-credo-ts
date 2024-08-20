@@ -3,6 +3,8 @@ import { InjectionSymbols } from '../../constants'
 
 import { Logger } from '../../logger'
 import { inject, injectable } from '../../plugins'
+import { TypedArrayEncoder, isDid, Buffer } from '../../utils'
+import { JsonEncoder } from '../../utils/JsonEncoder'
 
 import { SignatureExchangeService } from './services'
 import { DidExchangeRequestMessage } from './messages'
@@ -15,7 +17,7 @@ import { OutboundMessageContext } from '../../agent/models'
 
 
 @injectable()
-export class DidExchangeProtocol {
+export class SignatureExchangeProtocol {
   private logger: Logger
   private signatureExchangeService: SignatureExchangeService
   private messageSender: MessageSender
@@ -30,18 +32,16 @@ export class DidExchangeProtocol {
     this.messageSender = messageSender
   }
 
-  public async creteRequest(agentContext:AgentContext, message: DidExchangeRequestMessage, connectionId:string, didDoc:DidDocument) : Promise <void>{
-    const signatureExchangeRecord = await this.signatureExchangeService.createRequest(agentContext, {
-      message: message,
+  public async createRequest(agentContext:AgentContext, storedMessage: DidExchangeRequestMessage, connectionId:string, didDoc:DidDocument) : Promise <void>{
+    
+    const {message, signatureRecord} = await this.signatureExchangeService.createRequest(agentContext, {
+      message: storedMessage,
       connectionId: connectionId,
-      contextId: agentContext.contextCorrelationId,
-      state: SignatureExchangeState.Start,
-      role: SignatureExchangeRole.Requester
+      didDocument: didDoc
     })
 
-    const label = agentContext.config.label
-    const requestMessage= new SignatureExchangeRequestMessage({label,didDoc,connectionId})
-    this.messageSender.sendMessageToBroker(requestMessage,"signature")
+    this.messageSender.sendMessageToBroker(message)
+    this.signatureExchangeService.updateState(agentContext, signatureRecord,SignatureExchangeState.RequestSent)
     
   }
 

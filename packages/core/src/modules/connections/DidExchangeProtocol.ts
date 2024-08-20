@@ -43,6 +43,7 @@ import { DidExchangeRequestMessage, DidExchangeResponseMessage, DidExchangeCompl
 import { DidExchangeRole, DidExchangeState, HandshakeProtocol } from './models'
 import { ConnectionService } from './services'
 import { createPeerDidFromServices, getDidDocumentForCreatedDid, routingToServices } from './services/helpers'
+import { SignatureExchangeProtocol } from './SignatureExchangeProtocol'
 
 interface DidExchangeRequestParams {
   label?: string
@@ -59,25 +60,29 @@ export class DidExchangeProtocol {
   private connectionService: ConnectionService
   private jwsService: JwsService
   private didRepository: DidRepository
+  private signatureExchangeProtocol: SignatureExchangeProtocol
   private logger: Logger
 
   public constructor(
     connectionService: ConnectionService,
     didRepository: DidRepository,
     jwsService: JwsService,
+    signatureExchangeProtocol: SignatureExchangeProtocol,
     @inject(InjectionSymbols.Logger) logger: Logger
   ) {
     this.connectionService = connectionService
     this.didRepository = didRepository
     this.jwsService = jwsService
+    this.signatureExchangeProtocol = signatureExchangeProtocol
     this.logger = logger
   }
 
   public async createRequest(
     agentContext: AgentContext,
     outOfBandRecord: OutOfBandRecord,
-    params: DidExchangeRequestParams
-  ): Promise<{ message: DidExchangeRequestMessage; connectionRecord: ConnectionRecord }> {
+    params: DidExchangeRequestParams,
+    useRemoteKeyExchangeProtocol: boolean = false
+  ): Promise<{ message?: DidExchangeRequestMessage ; connectionRecord: ConnectionRecord }> {
     this.logger.debug(`Create message ${DidExchangeRequestMessage.type.messageTypeUri} start`, {
       outOfBandRecord,
       params,
@@ -115,14 +120,16 @@ export class DidExchangeProtocol {
 
     const message = new DidExchangeRequestMessage({ label, parentThreadId, did: didDocument.id, goal, goalCode })
 
-    // Create sign attachment containing didDoc
-    if (isValidPeerDid(didDocument.id) && getNumAlgoFromPeerDid(didDocument.id) === PeerDidNumAlgo.GenesisDoc) {
-      const didDocAttach = await this.createSignedAttachment(
-        agentContext,
-        didDocument.toJSON(),
-        didDocument.recipientKeys.map((key) => key.publicKeyBase58)
-      )
-      message.didDoc = didDocAttach
+    if (!useRemoteKeyExchangeProtocol){
+      // Create sign attachment containing didDoc
+      if (isValidPeerDid(didDocument.id) && getNumAlgoFromPeerDid(didDocument.id) === PeerDidNumAlgo.GenesisDoc) {
+        const didDocAttach = await this.createSignedAttachment(
+          agentContext,
+          didDocument.toJSON(),
+          didDocument.recipientKeys.map((key) => key.publicKeyBase58)
+        )
+        message.didDoc = didDocAttach
+      }
     }
 
     const connectionRecord = await this.connectionService.createConnection(agentContext, {
@@ -147,12 +154,17 @@ export class DidExchangeProtocol {
       connectionRecord.autoAcceptConnection = autoAcceptConnection
     }
 
-    await this.updateState(agentContext, DidExchangeRequestMessage.type, connectionRecord)
-    this.logger.debug(`Create message ${DidExchangeRequestMessage.type.messageTypeUri} end`, {
-      connectionRecord,
-      message,
-    })
-    return { message, connectionRecord }
+    if (!useRemoteKeyExchangeProtocol){
+      await this.updateState(agentContext, DidExchangeRequestMessage.type, connectionRecord)
+      this.logger.debug(`Create message ${DidExchangeRequestMessage.type.messageTypeUri} end`, {
+        connectionRecord,
+        message,
+      })
+      return { message, connectionRecord }
+    }else{
+      await this.signatureExchangeProtocol.createRequest(agentContext,message,connectionRecord.id,didDocument)
+      return {connectionRecord}
+    }
   }
 
   public async processRequest(

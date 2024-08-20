@@ -16,6 +16,8 @@ import type { PubKeyStateChangedEvent } from '../PubKeyEvents'
 import { PubKeyEventTypes } from '../PubKeyEvents'
 import { firstValueFrom, ReplaySubject } from 'rxjs'
 import {CredoError} from '../../../error'
+
+
 @injectable()
 export class PubKeyService {
   private pubKeyRepository: PubKeyRepository
