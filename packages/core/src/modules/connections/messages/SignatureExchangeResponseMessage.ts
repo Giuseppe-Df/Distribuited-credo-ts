@@ -4,9 +4,8 @@ import { IsOptional, IsString, ValidateNested } from 'class-validator'
 import { AgentMessage } from '../../../agent/AgentMessage'
 import { IsValidMessageType, parseMessageType } from '../../../utils/messageType'
 
-export interface SignatureExchangeRequestMessageOptions {
+export interface SignatureExchangeResponseMessageOptions {
   id?: string
-  label: string
   data: string
   dataId:string
 }
@@ -14,32 +13,28 @@ export interface SignatureExchangeRequestMessageOptions {
 /**
  * Message to communicate the DID document to the remote signer agent
  */
-export class SignatureExchangeRequestMessage extends AgentMessage {
+export class SignatureExchangeResponseMessage extends AgentMessage {
   /**
    * Create new DidExchangeRequestMessage instance.
    * @param options
    */
-  public constructor(options: SignatureExchangeRequestMessageOptions) {
+  public constructor(options: SignatureExchangeResponseMessageOptions) {
     super();
 
     if (options) {
       this.id = options.id || this.generateId();
-      this.label = options.label;
       this.dataId = options.dataId;
       this.data = options.data;
     }
   }
 
-  @IsValidMessageType(SignatureExchangeRequestMessage.type)
-  public readonly type = SignatureExchangeRequestMessage.type.messageTypeUri;
-  public static readonly type = parseMessageType('https://didcomm.org/signature_exchange/1.0/request');
+  @IsValidMessageType(SignatureExchangeResponseMessage.type)
+  public readonly type = SignatureExchangeResponseMessage.type.messageTypeUri;
+  public static readonly type = parseMessageType('https://didcomm.org/signature_exchange/1.0/response');
 
   @IsString()
-  public readonly label?: string;
+  public data!: string; 
 
   @IsString()
-  public data?: string; 
-
-  @IsString()
-  public readonly dataId?: string;
+  public readonly dataId!: string;
 }

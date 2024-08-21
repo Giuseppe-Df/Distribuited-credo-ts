@@ -114,14 +114,14 @@ export class MessageSender {
     }
   }
 
-  public async sendMessageToBroker(message:AgentMessage){
+  public async sendMessageToBroker(message:AgentMessage, agentContext: AgentContext){
     this.logger.debug("Sending message to broker", message)
     if (!this.mqttTransport){
       this.logger.debug("No MQTT trasport found")
       throw new CredoError("MQTT transport not available")
     }
     try{
-      await this.mqttTransport.publish(message)
+      await this.mqttTransport.publish(message,agentContext)
       this.logger.debug("Message sent")
     }catch(err){
       this.logger.debug("Error sending message to broker"+message,err)

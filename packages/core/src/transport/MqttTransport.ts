@@ -7,6 +7,7 @@ import { MessageReceiver } from '../agent/MessageReceiver'
 import { getOutboundTopics, getInboundTopics } from './MqttTopics'
 import { resolve } from 'path'
 import { CredoError } from '../error'
+import { AgentContext } from '../agent'
 
 export class MqttTransport {
 
@@ -33,7 +34,7 @@ export class MqttTransport {
         }
 
         try{
-            //await this.clean()
+            await this.clean()
             await this.subscribe()
             agent.config.logger.debug(`Inbound MQTT Topics Ready`)
         }catch(err){
@@ -52,21 +53,24 @@ export class MqttTransport {
             
     }
 
-    public async publish(message: AgentMessage) {
+    public async publish(message: AgentMessage, agentContext:AgentContext) {
         if (!this.client) {
             await this.connect();
         }
 
         const topic = this.outboundTopics[message.type];
+        agentContext.config.logger.debug("topic" + topic)
         if (!topic) {
             throw new Error(`Unsupported message type: ${message.type}`);
         }
+        
 
         return new Promise<void>((resolve, reject) => {
             this.client.publish(topic, JSON.stringify(message), (err) => {
                 if (err) {
                     reject(err);
                 } else {
+                    agentContext.config.logger.debug("Publishing message" + JSON.stringify(message))
                     resolve();
                 }
             });

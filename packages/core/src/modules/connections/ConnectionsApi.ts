@@ -33,9 +33,10 @@ import {
   DidRotateAckHandler,
   DidRotateProblemReportHandler,
   HangupHandler,
+  SignatureExchangeResponseHandler
 } from './handlers'
 import { HandshakeProtocol } from './models'
-import { DidRotateService } from './services'
+import { DidRotateService, SignatureExchangeService } from './services'
 import { ConnectionService } from './services/ConnectionService'
 import { TrustPingService } from './services/TrustPingService'
 
@@ -57,6 +58,7 @@ export class ConnectionsApi {
   private outOfBandService: OutOfBandService
   private messageSender: MessageSender
   private trustPingService: TrustPingService
+  private signatureExchangeService: SignatureExchangeService
   private routingService: RoutingService
   private didRepository: DidRepository
   private didResolverService: DidResolverService
@@ -69,6 +71,7 @@ export class ConnectionsApi {
     didRotateService: DidRotateService,
     outOfBandService: OutOfBandService,
     trustPingService: TrustPingService,
+    signatureExchangeService: SignatureExchangeService,
     routingService: RoutingService,
     didRepository: DidRepository,
     didResolverService: DidResolverService,
@@ -81,6 +84,7 @@ export class ConnectionsApi {
     this.didRotateService = didRotateService
     this.outOfBandService = outOfBandService
     this.trustPingService = trustPingService
+    this.signatureExchangeService = signatureExchangeService
     this.routingService = routingService
     this.didRepository = didRepository
     this.messageSender = messageSender
@@ -569,6 +573,9 @@ export class ConnectionsApi {
     )
     messageHandlerRegistry.registerMessageHandler(
       new ConnectionResponseHandler(this.connectionService, this.outOfBandService, this.didResolverService, this.config)
+    )
+    messageHandlerRegistry.registerMessageHandler(
+      new SignatureExchangeResponseHandler(this.signatureExchangeService, this.outOfBandService,this.connectionService)
     )
     messageHandlerRegistry.registerMessageHandler(new AckMessageHandler(this.connectionService))
     messageHandlerRegistry.registerMessageHandler(new ConnectionProblemReportHandler(this.connectionService))

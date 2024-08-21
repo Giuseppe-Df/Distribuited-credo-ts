@@ -11,7 +11,7 @@ import { DidExchangeRequestMessage } from './messages'
 import { SignatureExchangeRole, SignatureExchangeState } from './models'
 import { MessageSender } from '../../agent/MessageSender'
 import { DidDocument } from '../dids'
-import { SignatureExchangeExchangeRequestMessageOptions, SignatureExchangeRequestMessage } from './messages/SignatureExchangeRequestMessage'
+import { SignatureExchangeRequestMessageOptions, SignatureExchangeRequestMessage } from './messages/SignatureExchangeRequestMessage'
 import { OutboundMessageContext } from '../../agent/models'
 
 
@@ -40,8 +40,8 @@ export class SignatureExchangeProtocol {
       didDocument: didDoc
     })
 
-    this.messageSender.sendMessageToBroker(message)
-    this.signatureExchangeService.updateState(agentContext, signatureRecord,SignatureExchangeState.RequestSent)
+    await this.messageSender.sendMessageToBroker(message,agentContext)
+    await this.signatureExchangeService.updateState(agentContext, signatureRecord,SignatureExchangeState.RequestSent)
     
   }
 

@@ -7,9 +7,10 @@ import { Protocol } from '../../agent/models'
 import { ConnectionsApi } from './ConnectionsApi'
 import { ConnectionsModuleConfig } from './ConnectionsModuleConfig'
 import { DidExchangeProtocol } from './DidExchangeProtocol'
-import { ConnectionRole, DidExchangeRole, DidRotateRole } from './models'
-import { ConnectionRepository } from './repository'
-import { ConnectionService, DidRotateService, TrustPingService } from './services'
+import { SignatureExchangeProtocol } from './SignatureExchangeProtocol'
+import { ConnectionRole, DidExchangeRole, DidRotateRole, SignatureExchangeRole } from './models'
+import { ConnectionRepository, SignatureExchangeRepository } from './repository'
+import { ConnectionService, DidRotateService, TrustPingService, SignatureExchangeService } from './services'
 
 export class ConnectionsModule implements Module {
   public readonly config: ConnectionsModuleConfig
@@ -31,15 +32,23 @@ export class ConnectionsModule implements Module {
     dependencyManager.registerSingleton(DidExchangeProtocol)
     dependencyManager.registerSingleton(DidRotateService)
     dependencyManager.registerSingleton(TrustPingService)
+    dependencyManager.registerSingleton(SignatureExchangeService)
+    dependencyManager.registerSingleton(SignatureExchangeProtocol)
+    
 
     // Repositories
     dependencyManager.registerSingleton(ConnectionRepository)
+    dependencyManager.registerSingleton(SignatureExchangeRepository)
 
     // Features
     featureRegistry.register(
       new Protocol({
         id: 'https://didcomm.org/connections/1.0',
         roles: [ConnectionRole.Invitee, ConnectionRole.Inviter],
+      }),
+      new Protocol({
+        id: 'https://didcomm.org/signature_exchange/1.0',
+        roles: [SignatureExchangeRole.Requester, SignatureExchangeRole.Responder],
       }),
       new Protocol({
         id: 'https://didcomm.org/didexchange/1.1',

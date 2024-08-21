@@ -85,7 +85,9 @@ export class BaseAgent {
       modules: getAskarAnonCredsIndyModules(),
     })
     this.agent.registerInboundTransport(new HttpInboundTransport({ port }))
-    this.agent.registerMqttTrasport(new MqttTransport("mqtt://broker.hivemq.com", "1234"))
+    if (name=="alice"){
+      this.agent.registerMqttTrasport(new MqttTransport("mqtt://broker.hivemq.com", "1234"))
+    }
     this.agent.registerOutboundTransport(new HttpOutboundTransport())
   }
 
@@ -104,7 +106,7 @@ function getAskarAnonCredsIndyModules() {
     pubkey: new PubKeyModule(),
     connections: new ConnectionsModule({
       autoAcceptConnections: true,
-      useRemoteKeyExchangeProtocol:false,
+      useRemoteKeyExchangeProtocol:true,
     }),
     credentials: new CredentialsModule({
       autoAcceptCredentials: AutoAcceptCredential.ContentApproved,

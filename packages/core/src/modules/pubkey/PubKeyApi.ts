@@ -41,7 +41,7 @@ export class PubKeyApi {
     public async requestPubKey(){
         const result= await this.pubKeyService.createRequest(this.agentContext)
         const {message,keyRecord}=result
-        await this.messageSender.sendMessageToBroker(message)
+        await this.messageSender.sendMessageToBroker(message,this.agentContext)
         await this.pubKeyService.updateState(this.agentContext,keyRecord,PubKeyState.RequestSent)
         return keyRecord
     }

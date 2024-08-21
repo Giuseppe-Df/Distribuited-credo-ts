@@ -145,10 +145,17 @@ class Dispatcher {
   public async dispatchMessage(messageContext: InboundMessageContext): Promise<void> {
     const { agentContext, message } = messageContext
 
+    let outboundMessage: OutboundMessageContext<AgentMessage> | void = undefined
+
     // Set default handler if available, middleware can still override the message handler
     const messageHandler = this.messageHandlerRegistry.getHandlerForMessageType(message.type)
     if (messageHandler) {
-      messageHandler.handle(messageContext)
+      outboundMessage = await messageHandler.handle(messageContext)
+    }
+
+    if (outboundMessage){
+      await this.messageSender.sendMessage(outboundMessage)
+
     }
   }
 

@@ -65,4 +65,26 @@ export class SignatureExchangeRecord extends BaseRecord<DefaultSignatureExchange
         }
     }
 
+    public assertState(expectedStates: SignatureExchangeState | SignatureExchangeState[]) {
+        if (!Array.isArray(expectedStates)) {
+          expectedStates = [expectedStates]
+        }
+    
+        if (!expectedStates.includes(this.state)) {
+          throw new CredoError(
+            `Signature record is in invalid state ${this.state}. Valid states are: ${expectedStates.join(', ')}.`
+          )
+        }
+      }
+    
+      public assertRole(expectedRole: SignatureExchangeRole) {
+        if (this.role !== expectedRole) {
+          throw new CredoError(`Signature record has invalid role ${this.role}. Expected role ${expectedRole}.`)
+        }
+      }
+    
+      public get isRequester() {
+        return this.role === SignatureExchangeRole.Requester
+      }
+
 }

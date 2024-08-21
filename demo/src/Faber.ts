@@ -87,8 +87,8 @@ export class Faber extends BaseAgent {
 
     const getConnectionRecord = (outOfBandId: string) =>
       new Promise<ConnectionRecord>((resolve, reject) => {
-        // Timeout of 20 seconds
-        const timeoutId = setTimeout(() => reject(new Error(redText(Output.MissingConnectionRecord))), 20000)
+        // Timeout of 60 seconds
+        const timeoutId = setTimeout(() => reject(new Error(redText(Output.MissingConnectionRecord))), 60000)
 
         // Start listener
         this.agent.events.on<ConnectionStateChangedEvent>(ConnectionEventTypes.ConnectionStateChanged, (e) => {
