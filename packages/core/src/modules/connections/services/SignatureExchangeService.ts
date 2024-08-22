@@ -88,25 +88,27 @@ export class SignatureExchangeService {
   public async processResponse(message:SignatureExchangeResponseMessage, agentContext:AgentContext):Promise<{messageToSend: DidExchangeRequestMessage,connectionId: string}>{
     
     this.logger.debug("Start processing signature exchange response "+message.data)
+
     const signatureRecord = await this.getById(agentContext,message.dataId)
     signatureRecord.assertRole(SignatureExchangeRole.Requester)
     signatureRecord.assertState(SignatureExchangeState.RequestSent)
-
+    this.logger.debug("1")
     const key = await this.pubKeyApi.getPublicKey()
-
+    this.logger.debug("2")
     if (!message.data || !message.dataId){
       throw new CredoError("Signature response message is invalid")
     }
-    
-    const data = signatureRecord.didDocument.toJSON()
+    //const data = signatureRecord.didDocument.toJSON()
+    const data = signatureRecord.didDocument
+    this.logger.debug("3", data)
     const signedAttach = new Attachment({
-      mimeType: typeof data === 'string' ? undefined : 'application/json',
+      mimeType: 'application/json',
       data: new AttachmentData({
         base64:
-          typeof data === 'string' ? TypedArrayEncoder.toBase64URL(Buffer.from(data)) : JsonEncoder.toBase64(data),
+          JsonEncoder.toBase64(data),
       }),
     })
-    
+    this.logger.debug("4")
     //Creazione della struttura dati rappresentate il jws di tipo JwsGeneralFormat
     const kid = new DidKey(key).did
     const signature = TypedArrayEncoder.toBase64URL(TypedArrayEncoder.fromHex(message.data))
@@ -116,12 +118,11 @@ export class SignatureExchangeService {
       header: {kid,},
       payload: signatureRecord.base64Payload,
     }
-    
+    this.logger.debug("5")
     signedAttach.addJws(jws)
     signatureRecord.message.didDoc=signedAttach
-
     signatureRecord.state=SignatureExchangeState.Completed
-
+    this.logger.debug("6")
     this.update(agentContext,signatureRecord)
 
     return  {

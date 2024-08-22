@@ -8,4 +8,5 @@ export const getOutboundTopics = (deviceId: string): Record<string, string> => (
 //List of inbound topics
 export const getInboundTopics = (deviceId: string): string[] => [
   `${deviceId}/pubKey/response`,
+  `${deviceId}/signatureExchange/response`,
 ];

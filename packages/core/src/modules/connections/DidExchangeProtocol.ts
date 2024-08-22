@@ -154,8 +154,9 @@ export class DidExchangeProtocol {
       connectionRecord.autoAcceptConnection = autoAcceptConnection
     }
 
+    await this.updateState(agentContext, DidExchangeRequestMessage.type, connectionRecord)
+    
     if (!useRemoteKeyExchangeProtocol){
-      await this.updateState(agentContext, DidExchangeRequestMessage.type, connectionRecord)
       this.logger.debug(`Create message ${DidExchangeRequestMessage.type.messageTypeUri} end`, {
         connectionRecord,
         message,
