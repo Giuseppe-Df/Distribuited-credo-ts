@@ -155,7 +155,7 @@ export class DidExchangeProtocol {
     }
 
     await this.updateState(agentContext, DidExchangeRequestMessage.type, connectionRecord)
-    
+
     if (!useRemoteKeyExchangeProtocol){
       this.logger.debug(`Create message ${DidExchangeRequestMessage.type.messageTypeUri} end`, {
         connectionRecord,
@@ -163,7 +163,8 @@ export class DidExchangeProtocol {
       })
       return { message, connectionRecord }
     }else{
-      await this.signatureExchangeProtocol.createRequest(agentContext,message,connectionRecord.id,didDocument)
+      
+      await this.signatureExchangeProtocol.createRequest(agentContext,message,connectionRecord.id,didDocument,outOfBandRecord.outOfBandInvitation.id)
       return {connectionRecord}
     }
   }

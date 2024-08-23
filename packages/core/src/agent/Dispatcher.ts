@@ -17,6 +17,7 @@ import { MessageHandlerMiddlewareRunner } from './MessageHandlerMiddleware'
 import { MessageHandlerRegistry } from './MessageHandlerRegistry'
 import { MessageSender } from './MessageSender'
 import { OutboundMessageContext } from './models'
+import { DidExchangeRequestMessage } from '../modules/connections'
 
 @injectable()
 class Dispatcher {
@@ -155,7 +156,6 @@ class Dispatcher {
 
     if (outboundMessage){
       await this.messageSender.sendMessage(outboundMessage)
-
     }
   }
 

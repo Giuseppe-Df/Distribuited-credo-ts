@@ -28,7 +28,7 @@ export class EnvelopeService {
     keys: EnvelopeKeys
   ): Promise<EncryptedMessage> {
     const { recipientKeys, routingKeys, senderKey } = keys
-    let recipientKeysBase58 = recipientKeys.map((key) => key.publicKeyBase58)
+        let recipientKeysBase58 = recipientKeys.map((key) => key.publicKeyBase58)
     const routingKeysBase58 = routingKeys.map((key) => key.publicKeyBase58)
     const senderKeyBase58 = senderKey && senderKey.publicKeyBase58
     // pass whether we want to use legacy did sov prefix

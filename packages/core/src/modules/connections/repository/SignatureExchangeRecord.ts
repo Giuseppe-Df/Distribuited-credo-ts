@@ -22,6 +22,7 @@ export interface SignatureExchangeRecordProps {
     didDocument: DidDocument
     base64Payload: string
     base64UrlProtectedHeader: string
+    parentId:string
 }
 
 export type CustomSignatureExchangeTags = TagsBase
@@ -37,6 +38,7 @@ export class SignatureExchangeRecord extends BaseRecord<DefaultSignatureExchange
     public didDocument!: DidDocument
     public base64Payload!: string
     public base64UrlProtectedHeader!: string
+    public parentId!:string
 
     public static readonly type = 'SignatureExchange'
     public readonly type = SignatureExchangeRecord.type
@@ -55,6 +57,7 @@ export class SignatureExchangeRecord extends BaseRecord<DefaultSignatureExchange
           this.didDocument = props.didDocument
           this.base64Payload = props.base64Payload
           this.base64UrlProtectedHeader = props.base64UrlProtectedHeader
+          this.parentId = props.parentId
         }
     }
 

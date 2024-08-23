@@ -65,13 +65,14 @@ export class SignatureExchangeService {
     }))
 
     const signatureRecord = await this.createRecord(agentContext,{
-      message: options.message,
+      message: <DidExchangeRequestMessage>options.message,
       connectionId: options.connectionId,
       state: SignatureExchangeState.Start,
       role: SignatureExchangeRole.Requester,
       didDocument: options.didDocument,
       base64Payload,
-      base64UrlProtectedHeader
+      base64UrlProtectedHeader,
+      parentId:options.parentid
     })
 
     //dataToSign è di tipo Buffer
@@ -85,7 +86,7 @@ export class SignatureExchangeService {
 
   }
 
-  public async processResponse(message:SignatureExchangeResponseMessage, agentContext:AgentContext):Promise<{messageToSend: DidExchangeRequestMessage,connectionId: string}>{
+  public async processResponse(message:SignatureExchangeResponseMessage, agentContext:AgentContext):Promise<{returnMessage: DidExchangeRequestMessage,connectionId: string}>{
     
     this.logger.debug("Start processing signature exchange response "+message.data)
 
@@ -120,13 +121,20 @@ export class SignatureExchangeService {
     }
     this.logger.debug("5")
     signedAttach.addJws(jws)
+    
     signatureRecord.message.didDoc=signedAttach
     signatureRecord.state=SignatureExchangeState.Completed
     this.logger.debug("6")
     this.update(agentContext,signatureRecord)
-
+    //const returnmessage = new DidExchangeRequestMessage({ label:signatureRecord.message.label?signatureRecord.message.label:"", parentThreadId:signatureRecord.message.pare, did: didDocument.id, goal, goalCode })
+    const themessage = new DidExchangeRequestMessage({id: signatureRecord.message.id,parentThreadId:signatureRecord.parentId ,label:signatureRecord.message.label as string, did: signatureRecord.message.did})
+    themessage.didDoc= signedAttach
+    /*Object.setPrototypeOf(themessage, DidExchangeRequestMessage.prototype)*/
+    this.logger.debug("themessage in service",themessage)
+    this.logger.debug("themessage in service che vuole fare il tojson",themessage.toJSON())
+    
     return  {
-      messageToSend: signatureRecord.message,
+      returnMessage:themessage,
       connectionId: signatureRecord.connectionId,
     }
 
@@ -178,6 +186,7 @@ export interface CreateSignatureRequestOptions {
   message: DidExchangeRequestMessage
   connectionId: string,
   didDocument: DidDocument
+  parentid:string
 }
 
 export interface SignatureExchangeProtocolMsgReturnType<MessageType extends AgentMessage> {

@@ -9,6 +9,7 @@ import { OutboundMessageContext } from '../../../agent/models'
 import { ConnectionService } from '../services'
 import { OutOfBandService } from '../../oob'
 import { DidExchangeRequestMessage } from '../messages'
+import { AgentMessage } from '../../../agent/AgentMessage'
 
 export class SignatureExchangeResponseHandler implements MessageHandler {
   private signatureExchangeService: SignatureExchangeService
@@ -31,13 +32,13 @@ export class SignatureExchangeResponseHandler implements MessageHandler {
     const { message } = messageContext
     
     
-    const {messageToSend, connectionId} = await this.signatureExchangeService.processResponse(message,messageContext.agentContext)
+    const {returnMessage, connectionId} = await this.signatureExchangeService.processResponse(message,messageContext.agentContext)
     const connectionRecord = await this.connectionService.getById(messageContext.agentContext,connectionId)
     let outOfBandRecord
     if(connectionRecord.outOfBandId){
       outOfBandRecord = await this.outOfBandService.getById(messageContext.agentContext,connectionRecord.outOfBandId)
     }
-    return new OutboundMessageContext(messageToSend, {
+    return new OutboundMessageContext(returnMessage, {
       agentContext: messageContext.agentContext,
       connection: connectionRecord,
       outOfBand: outOfBandRecord,

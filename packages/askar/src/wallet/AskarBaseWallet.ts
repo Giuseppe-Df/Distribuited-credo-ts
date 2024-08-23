@@ -386,7 +386,6 @@ export abstract class AskarBaseWallet implements Wallet {
       }
 
       const envelope = didcommV1Pack(payload, recipientKeys, senderKey?.key)
-
       return envelope
     } finally {
       senderKey?.key.handle.free()
