@@ -28,7 +28,7 @@ export class EnvelopeService {
     keys: EnvelopeKeys
   ): Promise<EncryptedMessage> {
     const { recipientKeys, routingKeys, senderKey } = keys
-        let recipientKeysBase58 = recipientKeys.map((key) => key.publicKeyBase58)
+    let recipientKeysBase58 = recipientKeys.map((key) => key.publicKeyBase58)
     const routingKeysBase58 = routingKeys.map((key) => key.publicKeyBase58)
     const senderKeyBase58 = senderKey && senderKey.publicKeyBase58
     // pass whether we want to use legacy did sov prefix
@@ -36,8 +36,8 @@ export class EnvelopeService {
 
     this.logger.debug(`Pack outbound message ${message['@type']}`)
 
-    let encryptedMessage = await agentContext.wallet.pack(message, recipientKeysBase58, senderKeyBase58 ?? undefined)
-
+    //let encryptedMessage = await agentContext.wallet.pack(message, recipientKeysBase58, senderKeyBase58 ?? undefined)
+    let encryptedMessage = await agentContext.wallet.pack(message, recipientKeysBase58)
     // If the message has routing keys (mediator) pack for each mediator
     for (const routingKeyBase58 of routingKeysBase58) {
       const forwardMessage = new ForwardMessage({

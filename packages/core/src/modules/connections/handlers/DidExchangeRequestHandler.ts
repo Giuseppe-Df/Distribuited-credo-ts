@@ -12,6 +12,7 @@ import { tryParseDid } from '../../dids/domain/parse'
 import { OutOfBandState } from '../../oob/domain/OutOfBandState'
 import { DidExchangeRequestMessage } from '../messages'
 import { HandshakeProtocol } from '../models'
+import { Key } from '@credo-ts/core'
 
 export class DidExchangeRequestHandler implements MessageHandler {
   private didExchangeProtocol: DidExchangeProtocol
@@ -37,9 +38,12 @@ export class DidExchangeRequestHandler implements MessageHandler {
 
   public async handle(messageContext: MessageHandlerInboundMessage<DidExchangeRequestHandler>) {
     const { agentContext, recipientKey, senderKey, message, connection, sessionId } = messageContext
-
-    if (!recipientKey || !senderKey) {
+    messageContext.agentContext.config.logger.debug("recipient dentro handler",recipientKey)
+    /*if (!recipientKey || !senderKey) {
       throw new CredoError('Unable to process connection request without senderKey or recipientKey')
+    }*/
+    if (!recipientKey){
+      throw new CredoError('Unable to process connection request without recipientKey')
     }
 
     const parentThreadId = message.thread?.parentThreadId
@@ -64,10 +68,10 @@ export class DidExchangeRequestHandler implements MessageHandler {
       throw new CredoError(`Connection record for non-reusable out-of-band ${outOfBandRecord.id} already exists.`)
     }
 
-    const receivedDidRecord = await this.didRepository.findReceivedDidByRecipientKey(agentContext, senderKey)
+    /*const receivedDidRecord = await this.didRepository.findReceivedDidByRecipientKey(agentContext, senderKey)
     if (receivedDidRecord) {
       throw new CredoError(`A received did record for sender key ${senderKey.fingerprint} already exists.`)
-    }
+    }*/
 
     // TODO Shouldn't we check also if the keys match the keys from oob invitation services?
 

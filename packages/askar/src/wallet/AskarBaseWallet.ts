@@ -384,7 +384,6 @@ export abstract class AskarBaseWallet implements Wallet {
       if (senderVerkey && !senderKey) {
         throw new WalletError(`Sender key not found`)
       }
-
       const envelope = didcommV1Pack(payload, recipientKeys, senderKey?.key)
       return envelope
     } finally {
