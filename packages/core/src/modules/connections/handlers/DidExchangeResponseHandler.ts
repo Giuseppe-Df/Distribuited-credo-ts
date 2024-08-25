@@ -37,7 +37,10 @@ export class DidExchangeResponseHandler implements MessageHandler {
   public async handle(messageContext: MessageHandlerInboundMessage<DidExchangeResponseHandler>) {
     const { agentContext, recipientKey, senderKey, message } = messageContext
 
-    if (!recipientKey || !senderKey) {
+    /*if (!recipientKey || !senderKey) {
+      throw new CredoError('Unable to process connection response without sender key or recipient key')
+    }*/
+    if (!recipientKey ) {
       throw new CredoError('Unable to process connection response without sender key or recipient key')
     }
 

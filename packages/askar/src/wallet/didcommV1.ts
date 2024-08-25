@@ -175,3 +175,21 @@ export function didcommV1Unpack(messagePackage: EncryptedMessage, recipientKey: 
     cek?.handle.free()
   }
 }
+
+export function didcommV1DistribuitedUnpack(messagePackage: EncryptedMessage,payloadKeyBase64: string) {
+  const payloadKey = TypedArrayEncoder.fromHex(payloadKeyBase64)
+
+  let cek: AskarKey | undefined
+  try {
+    cek = AskarKey.fromSecretBytes({ algorithm: KeyAlgs.Chacha20C20P, secretKey: payloadKey })
+    const message = cek.aeadDecrypt({
+      ciphertext: TypedArrayEncoder.fromBase64(messagePackage.ciphertext),
+      nonce: TypedArrayEncoder.fromBase64(messagePackage.iv),
+      tag: TypedArrayEncoder.fromBase64(messagePackage.tag),
+      aad: TypedArrayEncoder.fromString(messagePackage.protected),
+    })
+    return JsonEncoder.fromBuffer(message)
+  } finally {
+    cek?.handle.free()
+  }
+}

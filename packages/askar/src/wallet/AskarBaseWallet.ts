@@ -38,7 +38,8 @@ import {
 } from '../utils'
 import { convertToAskarKeyBackend } from '../utils/askarKeyBackend'
 
-import { didcommV1Pack, didcommV1Unpack } from './didcommV1'
+import { didcommV1Pack, didcommV1Unpack, didcommV1DistribuitedUnpack } from './didcommV1'
+import { PlaintextMessage } from 'packages/core/src/types'
 
 const isError = (error: unknown): error is Error => error instanceof Error
 
@@ -421,6 +422,16 @@ export abstract class AskarBaseWallet implements Wallet {
     }
 
     return returnValue
+  }
+
+  /**
+   * Unpacks a JWE Envelope coded using Cek derived from distribuited algoritm
+   *
+   * @param messagePackage JWE Envelope
+   * @returns UnpackedMessageContext with plain text message, sender key and recipient key
+   */
+  public async distribuitedUnpack(encryptedMessage: EncryptedMessage,payloadKey:string): Promise<PlaintextMessage> {
+    return await didcommV1DistribuitedUnpack(encryptedMessage,payloadKey)
   }
 
   public async generateNonce(): Promise<string> {

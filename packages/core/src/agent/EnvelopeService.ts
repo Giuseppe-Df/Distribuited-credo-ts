@@ -1,5 +1,5 @@
 import { AgentMessage } from './AgentMessage'
-import type { AgentContext } from './context'
+import { AgentContext } from './context'
 import type { EncryptedMessage, PlaintextMessage } from '../types'
 
 import { InjectionSymbols } from '../constants'
@@ -70,6 +70,10 @@ export class EnvelopeService {
       senderKey: senderKey ? Key.fromPublicKeyBase58(senderKey, KeyType.Ed25519) : undefined,
       plaintextMessage,
     }
+  }
+
+  public async unpackMessageCek(agentContext: AgentContext, encryptedMessage:EncryptedMessage, payloadKey: string): Promise <PlaintextMessage>{
+    return await agentContext.wallet.distribuitedUnpack(encryptedMessage,payloadKey);
   }
 }
 

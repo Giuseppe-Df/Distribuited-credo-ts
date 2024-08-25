@@ -4,12 +4,12 @@ import type { AgentContext } from './context'
 import type { ConnectionRecord } from '../modules/connections'
 import type { InboundTransport } from '../transport'
 import type { EncryptedMessage, PlaintextMessage } from '../types'
-import { PubKeyResponseMessage } from '../modules/pubkey/messages/PubKeyResponseMessage'
+import { CekExchangeApi } from '../modules/cek-exchange'
 
 import { InjectionSymbols } from '../constants'
 import { CredoError } from '../error'
 import { Logger } from '../logger'
-import { ConnectionService } from '../modules/connections'
+import { ConnectionService, ConnectionsModuleConfig } from '../modules/connections'
 import { ProblemReportError, ProblemReportMessage, ProblemReportReason } from '../modules/problem-reports'
 import { inject, injectable } from '../plugins'
 import { isValidJweStructure } from '../utils/JWE'
@@ -25,11 +25,12 @@ import { TransportService } from './TransportService'
 import { AgentContextProvider } from './context'
 import { InboundMessageContext, OutboundMessageContext } from './models'
 import { PubKeyApi } from '../modules/pubkey'
+import { JsonEncoder } from '../utils/JsonEncoder'
 
 @injectable()
 export class MessageReceiver {
   private envelopeService: EnvelopeService
-  private pubKeyApi: PubKeyApi
+  private cekApi: CekExchangeApi
   private transportService: TransportService
   private messageSender: MessageSender
   private dispatcher: Dispatcher
@@ -41,7 +42,7 @@ export class MessageReceiver {
 
   public constructor(
     envelopeService: EnvelopeService,
-    pubKeyApi: PubKeyApi,
+    cekApi: CekExchangeApi,
     transportService: TransportService,
     messageSender: MessageSender,
     connectionService: ConnectionService,
@@ -50,7 +51,7 @@ export class MessageReceiver {
     @inject(InjectionSymbols.AgentContextProvider) agentContextProvider: AgentContextProvider,
     @inject(InjectionSymbols.Logger) logger: Logger
   ) {
-    this.pubKeyApi= pubKeyApi
+    this.cekApi = cekApi
     this.envelopeService = envelopeService
     this.transportService = transportService
     this.messageSender = messageSender
@@ -156,6 +157,10 @@ export class MessageReceiver {
     session?: TransportSession,
     receivedAt?: Date
   ) {
+    const config = agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    if (config.useRemoteKeyExchangeProtocol){
+      await this.cekApi.requestContentEncryptionKey(encryptedMessage)
+    }
     const decryptedMessage = await this.decryptMessage(agentContext, encryptedMessage)
     const { plaintextMessage, senderKey, recipientKey } = decryptedMessage
 

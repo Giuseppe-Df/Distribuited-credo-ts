@@ -1,9 +1,9 @@
 import type { ConnectionRecord, CredentialExchangeRecord, ProofExchangeRecord, PubKeyRecord } from '@credo-ts/core'
 
-import { BaseAgent } from './BaseAgent'
+import { BaseAliceAgent } from './BaseAliceAgent'
 import { greenText, Output, redText } from './OutputClass'
 
-export class Alice extends BaseAgent {
+export class Alice extends BaseAliceAgent {
   public connected: boolean
   public connectionRecordFaberId?: string
 

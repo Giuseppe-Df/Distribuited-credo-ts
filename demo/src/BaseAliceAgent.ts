@@ -57,7 +57,7 @@ export const indyNetworkConfig = {
 
 type DemoAgent = Agent<ReturnType<typeof getAskarAnonCredsIndyModules >>
 
-export class BaseAgent {
+export class BaseAliceAgent {
   public port: number
   public name: string
   public config: InitConfig
@@ -79,14 +79,13 @@ export class BaseAgent {
     } satisfies InitConfig
 
     this.config = config
-    
     this.agent = new Agent({
       config,
       dependencies: agentDependencies,
       modules: getAskarAnonCredsIndyModules(),
     })
-    
     this.agent.registerInboundTransport(new HttpInboundTransport({ port }))
+    this.agent.registerMqttTrasport(new MqttTransport("mqtt://broker.hivemq.com", "1234"))
     this.agent.registerOutboundTransport(new HttpOutboundTransport())
   }
 
@@ -97,13 +96,16 @@ export class BaseAgent {
   }
 }
 
+
 function getAskarAnonCredsIndyModules() {
   const legacyIndyCredentialFormatService = new LegacyIndyCredentialFormatService()
   const legacyIndyProofFormatService = new LegacyIndyProofFormatService()
   return {
+    pubkey: new PubKeyModule(),
+    cekExchange: new CekModule(),
     connections: new ConnectionsModule({
       autoAcceptConnections: true,
-      useRemoteKeyExchangeProtocol:false,
+      useRemoteKeyExchangeProtocol:true,
     }),
     credentials: new CredentialsModule({
       autoAcceptCredentials: AutoAcceptCredential.ContentApproved,
@@ -155,5 +157,3 @@ function getAskarAnonCredsIndyModules() {
     }),
   } as const
 }
-
-
