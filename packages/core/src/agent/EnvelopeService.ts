@@ -36,8 +36,8 @@ export class EnvelopeService {
 
     this.logger.debug(`Pack outbound message ${message['@type']}`)
 
-    //let encryptedMessage = await agentContext.wallet.pack(message, recipientKeysBase58, senderKeyBase58 ?? undefined)
-    let encryptedMessage = await agentContext.wallet.pack(message, recipientKeysBase58)
+    let encryptedMessage = await agentContext.wallet.pack(message, recipientKeysBase58, senderKeyBase58 ?? undefined)
+    //let encryptedMessage = await agentContext.wallet.pack(message, recipientKeysBase58)
     // If the message has routing keys (mediator) pack for each mediator
     for (const routingKeyBase58 of routingKeysBase58) {
       const forwardMessage = new ForwardMessage({
