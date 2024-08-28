@@ -92,6 +92,63 @@ export function didcommV1Pack(payload: Record<string, unknown>, recipientKeys: s
   }
 }
 
+export function didcommV1DistribuitedPack(cek:AskarKey, cekNonceHex: string, encryptedCekHex: string, payload: Record<string, unknown>, recipientKey: string, senderKey?: AskarKey) {
+  let targetExchangeKey: AskarKey | undefined
+
+  try {
+
+    if (!senderKey){
+      throw new WalletError("Unable to process distribuited pack without senderKey")
+    }
+
+    targetExchangeKey = AskarKey.fromPublicBytes({
+      publicKey: Key.fromPublicKeyBase58(recipientKey, KeyType.Ed25519).publicKey,
+      algorithm: KeyAlgs.Ed25519,
+    }).convertkey({ algorithm: KeyAlgs.X25519 })
+
+    const encryptedSender = CryptoBox.seal({
+      recipientKey: targetExchangeKey,
+      message: TypedArrayEncoder.fromString(TypedArrayEncoder.toBase58(senderKey.publicBytes)),
+    })
+    const cekNonce = TypedArrayEncoder.fromHex(cekNonceHex)
+    const encryptedCek = TypedArrayEncoder.fromHex(encryptedCekHex)
+
+    
+    const recipient = new JweRecipient({
+        encryptedKey: encryptedCek,
+        header: {
+          kid: recipientKey,
+          sender: TypedArrayEncoder.toBase64URL(encryptedSender),
+          iv: TypedArrayEncoder.toBase64URL(cekNonce),
+        },
+      })
+    
+    const protectedJson = {
+      enc: 'xchacha20poly1305_ietf',
+      typ: 'JWM/1.0',
+      alg: senderKey ? 'Authcrypt' : 'Anoncrypt',
+      recipients: JsonTransformer.toJSON(recipient),
+    }
+
+    const { ciphertext, tag, nonce } = cek.aeadEncrypt({
+      message: Buffer.from(JSON.stringify(payload)),
+      aad: Buffer.from(JsonEncoder.toBase64URL(protectedJson)),
+    }).parts
+
+    const envelope = new JweEnvelope({
+      ciphertext: TypedArrayEncoder.toBase64URL(ciphertext),
+      iv: TypedArrayEncoder.toBase64URL(nonce),
+      protected: JsonEncoder.toBase64URL(protectedJson),
+      tag: TypedArrayEncoder.toBase64URL(tag),
+    }).toJson()
+
+    return envelope as EncryptedMessage
+  } finally {
+    cek?.handle.free()
+    targetExchangeKey?.handle.free()
+  }
+}
+
 export function didcommV1Unpack(messagePackage: EncryptedMessage, recipientKey: AskarKey) {
   const protectedJson = JsonEncoder.fromBase64(messagePackage.protected)
 

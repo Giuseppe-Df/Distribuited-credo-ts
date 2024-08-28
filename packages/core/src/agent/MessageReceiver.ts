@@ -169,7 +169,12 @@ export class MessageReceiver {
       plaintextMessage
     )
 
-    const connection = await this.findConnectionByMessageKeys(agentContext, decryptedMessage)
+    let connection
+
+    connection = await this.findConnectionByMessageKeys(agentContext, decryptedMessage)
+    /*if (!connection){
+      connection = await this.getConnectionByThid(agentContext, decryptedMessage)
+    }*/
 
     const message = await this.transformAndValidate(agentContext, plaintextMessage, connection)
 
@@ -272,6 +277,18 @@ export class MessageReceiver {
       recipientKey,
     })
   }
+
+  /*private async getConnectionByThid(
+    agentContext: AgentContext,
+    { plaintextMessage }: DecryptedMessageContext
+  ): Promise<ConnectionRecord | null> {
+    
+    const threadId= plaintextMessage['~thread']?.thid
+    this.logger.debug("threadID trovato"+threadId)
+    if (!threadId) return null
+
+    return this.connectionService.findByThreadId(agentContext, threadId)
+  }*/
 
   /**
    * Transform an plaintext DIDComm message into it's corresponding message class. Will look at all message types in the registered handlers.

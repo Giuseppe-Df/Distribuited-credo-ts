@@ -26,7 +26,7 @@ import {
   TypedArrayEncoder,
   KeyBackend,
 } from '@credo-ts/core'
-import { CryptoBox, Store, Key as AskarKey, keyAlgFromString } from '@hyperledger/aries-askar-shared'
+import { CryptoBox, Store, Key as AskarKey, keyAlgFromString, KeyAlgs } from '@hyperledger/aries-askar-shared'
 import BigNumber from 'bn.js'
 
 import {
@@ -202,6 +202,38 @@ export abstract class AskarBaseWallet implements Wallet {
       }
       throw new WalletError(`Error creating key with key type '${keyType}': ${error.message}`, { cause: error })
     }
+  }
+
+  public async createCek(id:string): Promise<string> {  
+
+    // Create cek
+    let key: AskarKey | undefined
+    try {
+      const _key = AskarKey.generate(KeyAlgs.Chacha20C20P)
+
+      // FIXME: we need to create a separate const '_key' so TS definitely knows _key is defined in the session callback.
+      // This will be fixed once we use the new 'using' syntax
+      key = _key
+
+      // Store key
+      await this.withSession((session) =>
+        session.insertKey({ key: _key, name: id })
+      )
+
+      return TypedArrayEncoder.toHex(key.secretBytes)
+    } catch (error) {
+      key?.handle.free()
+      // Handle case where key already exists
+      if (isAskarError(error, AskarErrorCode.Duplicate)) {
+        throw new WalletKeyExistsError('Key already exists')
+      }
+
+      // Otherwise re-throw error
+      throw error
+    }finally{
+      key?.handle.free()
+    }
+
   }
 
   /**
