@@ -22,6 +22,8 @@ import { ConnectionService } from '../connections/services'
 import { DiscoverFeaturesEventTypes } from './DiscoverFeaturesEvents'
 import { DiscoverFeaturesModuleConfig } from './DiscoverFeaturesModuleConfig'
 import { V1DiscoverFeaturesService, V2DiscoverFeaturesService } from './protocol'
+import { ConnectionsModuleConfig } from '../connections/ConnectionsModuleConfig'
+import { DistribuitedPackApi } from '../distribuited-pack'
 
 export interface QueryFeaturesReturnType {
   features?: Feature[]
@@ -133,7 +135,10 @@ export class DiscoverFeaturesApi<
         .subscribe(replaySubject)
     }
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext, config,api)
 
     return { features: options.awaitDisclosures ? await firstValueFrom(replaySubject) : undefined }
   }
@@ -163,6 +168,10 @@ export class DiscoverFeaturesApi<
       agentContext: this.agentContext,
       connection,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
   }
 }

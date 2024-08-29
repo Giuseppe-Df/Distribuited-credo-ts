@@ -39,6 +39,8 @@ import { CredentialsModuleConfig } from './CredentialsModuleConfig'
 import { CredentialState } from './models/CredentialState'
 import { RevocationNotificationService } from './protocol/revocation-notification/services'
 import { CredentialRepository } from './repository/CredentialRepository'
+import { ConnectionsModuleConfig } from '../connections/ConnectionsModuleConfig'
+import { DistribuitedPackApi } from '../distribuited-pack/DistribuitedPackApi'
 
 export interface CredentialsApi<CPs extends CredentialProtocol[]> {
   // Propose Credential methods
@@ -172,7 +174,10 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
       connectionRecord,
     })
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
     return credentialRecord
   }
 
@@ -216,7 +221,11 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
       associatedRecord: credentialRecord,
       connectionRecord,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return credentialRecord
   }
@@ -256,7 +265,11 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
       associatedRecord: credentialRecord,
       connectionRecord,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return credentialRecord
   }
@@ -289,7 +302,11 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
       associatedRecord: credentialRecord,
       connectionRecord,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return credentialRecord
   }
@@ -333,7 +350,11 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
       associatedRecord: credentialRecord,
       lastReceivedMessage: offerMessage,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return credentialRecord
   }
@@ -388,7 +409,11 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
       associatedRecord: credentialRecord,
       connectionRecord,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return credentialRecord
   }
@@ -464,7 +489,11 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
       lastReceivedMessage: requestMessage,
       lastSentMessage: offerMessage,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return credentialRecord
   }
@@ -510,7 +539,11 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
       associatedRecord: credentialRecord,
       lastReceivedMessage: credentialMessage,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return credentialRecord
   }
@@ -554,7 +587,11 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
       connectionRecord,
       associatedRecord: credentialRecord,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
   }
 
   /**
@@ -595,7 +632,11 @@ export class CredentialsApi<CPs extends CredentialProtocol[]> implements Credent
       associatedRecord: credentialRecord,
       lastReceivedMessage: offerMessage ?? undefined,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return credentialRecord
   }

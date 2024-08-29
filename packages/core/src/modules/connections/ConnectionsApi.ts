@@ -39,6 +39,7 @@ import { HandshakeProtocol } from './models'
 import { DidRotateService, SignatureExchangeService } from './services'
 import { ConnectionService } from './services/ConnectionService'
 import { TrustPingService } from './services/TrustPingService'
+import { DistribuitedPackApi } from '../distribuited-pack/DistribuitedPackApi'
 
 export interface SendPingOptions {
   responseRequested?: boolean
@@ -157,7 +158,9 @@ export class ConnectionsApi {
         connection: connectionRecord,
         outOfBand: outOfBandRecord,
       })
-      await this.messageSender.sendMessage(outboundMessageContext)
+      const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+      const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+      await this.messageSender.sendMessage(outboundMessageContext, config,api)
     }
     return connectionRecord
   }
@@ -224,7 +227,10 @@ export class ConnectionsApi {
       })
     }
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext, config,api)
     return connectionRecord
   }
 
@@ -274,7 +280,10 @@ export class ConnectionsApi {
       })
     }
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
     return connectionRecord
   }
 
@@ -306,8 +315,11 @@ export class ConnectionsApi {
       message.setReturnRouting(ReturnRouteTypes.none)
     }
 
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
     await this.messageSender.sendMessage(
-      new OutboundMessageContext(message, { agentContext: this.agentContext, connection })
+      new OutboundMessageContext(message, { agentContext: this.agentContext, connection }),config,api
     )
 
     return message
@@ -349,7 +361,10 @@ export class ConnectionsApi {
       connection,
     })
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext, config,api)
 
     return { newDid: message.toDid }
   }
@@ -373,7 +388,10 @@ export class ConnectionsApi {
       connection: connectionBeforeHangup,
     })
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     // After hang-up message submission, delete connection if required
     if (options.deleteAfterHangup) {

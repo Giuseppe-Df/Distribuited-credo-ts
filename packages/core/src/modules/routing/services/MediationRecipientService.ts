@@ -3,7 +3,7 @@ import type { AgentContext } from '../../../agent'
 import type { AgentMessage } from '../../../agent/AgentMessage'
 import type { InboundMessageContext } from '../../../agent/models/InboundMessageContext'
 import type { Query, QueryOptions } from '../../../storage/StorageService'
-import type { ConnectionRecord } from '../../connections'
+import { ConnectionsModuleConfig, type ConnectionRecord } from '../../connections'
 import type { Routing } from '../../connections/services/ConnectionService'
 import type { MediationStateChangedEvent, KeylistUpdatedEvent } from '../RoutingEvents'
 import type { MediationDenyMessage } from '../messages'
@@ -34,6 +34,7 @@ import { KeylistUpdate, KeylistUpdateMessage } from '../messages/KeylistUpdateMe
 import { MediationRole, MediationState } from '../models'
 import { MediationRecord } from '../repository/MediationRecord'
 import { MediationRepository } from '../repository/MediationRepository'
+import { DistribuitedPackApi } from '../../distribuited-pack'
 
 @injectable()
 export class MediationRecipientService {
@@ -194,7 +195,11 @@ export class MediationRecipientService {
       .subscribe(subject)
 
     const outboundMessageContext = new OutboundMessageContext(message, { agentContext, connection })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     const keylistUpdate = await firstValueFrom(subject)
     return keylistUpdate.payload.mediationRecord

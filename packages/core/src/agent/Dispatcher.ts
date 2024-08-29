@@ -18,8 +18,9 @@ import { MessageHandlerRegistry } from './MessageHandlerRegistry'
 import { MessageSender } from './MessageSender'
 import { OutboundMessageContext } from './models'
 import {OutboundPackage} from '../types'
-import { DidExchangeRequestMessage } from '../modules/connections'
+import { ConnectionsModuleConfig, DidExchangeRequestMessage } from '../modules/connections'
 import { ResolvedDidCommService } from '../modules/didcomm/types'
+import { DistribuitedPackApi } from '../modules/distribuited-pack/DistribuitedPackApi'
 
 @injectable()
 class Dispatcher {
@@ -130,8 +131,10 @@ class Dispatcher {
       if (!outboundMessage.inboundMessageContext) {
         outboundMessage.inboundMessageContext = messageContext
       }
+      const config = agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+      const api = agentContext.dependencyManager.resolve(DistribuitedPackApi)
 
-      await this.messageSender.sendMessage(outboundMessage)
+      await this.messageSender.sendMessage(outboundMessage,config,api)
     }
 
     // Emit event that allows to hook into received messages
@@ -157,7 +160,9 @@ class Dispatcher {
     }
 
     if (outboundMessage && outboundMessage instanceof OutboundMessageContext){
-      await this.messageSender.sendMessage(outboundMessage)
+      const config = agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+      const api = agentContext.dependencyManager.resolve(DistribuitedPackApi)
+      await this.messageSender.sendMessage(outboundMessage, config,api)
     }else if (outboundMessage && 'outboundPackage' in outboundMessage && 'service' in outboundMessage){
       await this.messageSender.sendDistribuitedPackMessage(outboundMessage.outboundPackage, outboundMessage.service)
     }

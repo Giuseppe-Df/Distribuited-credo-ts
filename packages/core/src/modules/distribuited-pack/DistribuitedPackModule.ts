@@ -5,7 +5,7 @@ import { Protocol } from '../../agent/models'
 
 import { DistribuitedPackApi } from './DistribuitedPackApi'
 import { DistribuitedPackRole, DistribuitedPackState } from './models'
-import { DistribuitedPackRepository } from './repository'
+import { DistribuitedPackRepository } from './repository/DistribuitedPackRepository'
 import { DistribuitedPackService} from './services'
 
 export class DistribuitedPackModule implements Module {

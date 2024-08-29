@@ -2,7 +2,7 @@ import type { MediationStateChangedEvent } from './RoutingEvents'
 import type { MediationRecord } from './repository'
 import type { GetRoutingOptions } from './services/RoutingService'
 import type { OutboundWebSocketClosedEvent, OutboundWebSocketOpenedEvent } from '../../transport'
-import type { ConnectionRecord } from '../connections'
+import { ConnectionsModuleConfig, type ConnectionRecord } from '../connections'
 
 import { firstValueFrom, interval, merge, ReplaySubject, Subject, timer } from 'rxjs'
 import { delayWhen, filter, first, takeUntil, tap, throttleTime, timeout } from 'rxjs/operators'
@@ -38,6 +38,7 @@ import { MediationState } from './models/MediationState'
 import { MediationRepository } from './repository'
 import { MediationRecipientService } from './services/MediationRecipientService'
 import { RoutingService } from './services/RoutingService'
+import { DistribuitedPackApi } from '../distribuited-pack'
 
 @injectable()
 export class MediationRecipientApi {
@@ -108,7 +109,10 @@ export class MediationRecipientApi {
         ? { schemes: ['wss', 'ws'], restrictive: true }
         : undefined
 
-    await this.messageSender.sendMessage(outboundMessageContext, {
+      const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+      const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api, {
       transportPriority,
       // TODO: add keepAlive: true to enforce through the public api
       // we need to keep the socket alive. It already works this way, but would
@@ -142,8 +146,11 @@ export class MediationRecipientApi {
       throw new CredoError('Cannot open websocket to connection without websocket service endpoint')
     }
 
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
     await this.messageSender.sendMessage(
-      new OutboundMessageContext(message, { agentContext: this.agentContext, connection: connectionRecord }),
+      new OutboundMessageContext(message, { agentContext: this.agentContext, connection: connectionRecord }),config,api,
       {
         transportPriority: {
           schemes: websocketSchemes,

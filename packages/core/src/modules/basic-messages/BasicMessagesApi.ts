@@ -6,10 +6,11 @@ import { MessageHandlerRegistry } from '../../agent/MessageHandlerRegistry'
 import { MessageSender } from '../../agent/MessageSender'
 import { OutboundMessageContext } from '../../agent/models'
 import { injectable } from '../../plugins'
-import { ConnectionService } from '../connections'
+import { ConnectionService, ConnectionsModuleConfig } from '../connections'
 
 import { BasicMessageHandler } from './handlers'
 import { BasicMessageService } from './services'
+import { DistribuitedPackApi } from '../distribuited-pack/DistribuitedPackApi'
 
 @injectable()
 export class BasicMessagesApi {
@@ -56,7 +57,10 @@ export class BasicMessagesApi {
       associatedRecord: basicMessageRecord,
     })
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
     return basicMessageRecord
   }
 

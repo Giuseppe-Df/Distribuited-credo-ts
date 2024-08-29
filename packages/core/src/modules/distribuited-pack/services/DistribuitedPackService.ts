@@ -8,7 +8,7 @@ import { Logger } from '../../../logger'
 import { DistribuitedPackRecordProps } from '../repository/DistribuitedPackRecord'
 import { DistribuitedPackRecord } from '../repository/DistribuitedPackRecord'
 import { DistribuitedPackState, DistribuitedPackRole } from '../models'
-import { DistribuitedPackRepository } from '../repository'
+import { DistribuitedPackRepository } from '../repository/DistribuitedPackRepository'
 import { DistribuitedPackRequestMessage, DistribuitedPackResponseMessage } from '../messages'
 import { PubKeyApi } from '../../pubkey/PubKeyApi'
 import { EnvelopeKeys, EnvelopeService } from '../../../agent/EnvelopeService'
@@ -22,7 +22,8 @@ import { firstValueFrom, ReplaySubject } from 'rxjs'
 import {CredoError} from '../../../error'
 import { TypedArrayEncoder } from '../../../utils'
 import { ResolvedDidCommService } from '../../didcomm/types'
-
+import { Key, KeyType } from '../../../crypto'
+import { DidExchangeRequestMessage } from '../../connections'
 
 @injectable()
 export class DistribuitedPackService {
@@ -65,8 +66,9 @@ export class DistribuitedPackService {
   ): Promise<DistribuitedPackMsgReturnType<DistribuitedPackRequestMessage>> {
     this.logger.debug("Creating Distribuited Pack Request")
 
-    const { recipientKeys, routingKeys, senderKey } = keys
+    const { recipientKeys, senderKey } = keys
     const recipientKey= TypedArrayEncoder.toHex(recipientKeys[0].publicKey)
+    const recipientKeyBase58 = recipientKeys[0].publicKeyBase58
     const senderKeyBase58 = senderKey && senderKey.publicKeyBase58
     const deviceKey = await this.pubKeyApi.getPublicKey()
 
@@ -74,11 +76,13 @@ export class DistribuitedPackService {
       throw new CredoError("Device key and Sender key does not match")
     }
 
+
     const record= await this.createRecord(agentContext,{
-      payload,
-      keys,
+      payload:payload.toJSON({ useDidSovPrefixWhereAllowed: agentContext.config.useDidSovPrefixWhereAllowed }),
+      recipientKeyBase58,
+      senderKeyBase58,
       endpoint,
-      service,
+      serviceId: service.id,
       connectionId,
       state: DistribuitedPackState.Start,
       role: DistribuitedPackRole.Requester
@@ -95,18 +99,33 @@ export class DistribuitedPackService {
 
   public async processResponse(message:DistribuitedPackResponseMessage, agentContext:AgentContext):Promise<{encryptedMessage:EncryptedMessage, endpoint:string, connectionId?:string, service: ResolvedDidCommService}>{
     
+    this.logger.debug("Processing Distribuited Pack response")
     const dataId = message.dataId
     const record = await this.getById(agentContext,dataId)
-    const encryptedMessage = await this.envelopeService.distribuitedPackMessage(agentContext,record.payload,record.keys, dataId,message.nonce, message.encryptedCek)
+    const keys = {
+      recipientKeys: [Key.fromPublicKeyBase58(record.recipientKeyBase58,KeyType.Ed25519)],
+      routingKeys: [],
+      senderKey: Key.fromPublicKeyBase58(record.senderKeyBase58,KeyType.Ed25519),
+    }
+    const service ={
+      id: record.serviceId,
+      recipientKeys: [Key.fromPublicKeyBase58(record.recipientKeyBase58,KeyType.Ed25519)],
+      routingKeys: [],
+      serviceEndpoint: record.endpoint
+    }
+    this.logger.debug("sto prima di pack")
+    const encryptedMessage = await this.envelopeService.distribuitedPackMessage(agentContext,record.payload,keys, dataId,message.nonce, message.encryptedCek)
 
-    return {encryptedMessage, endpoint: record.endpoint, connectionId:record.connectionId, service: record.service}
+    this.logger.debug("sto alla fine di  Distribuited Pack response")
+
+    return {encryptedMessage, endpoint: record.endpoint, connectionId:record.connectionId, service}
     
 
   }
 
   public async createRecord(agentContext: AgentContext, options: DistribuitedPackRecordProps): Promise<DistribuitedPackRecord> {
     const record = new DistribuitedPackRecord(options)
-    await this.distribuitedPackRepository.save(agentContext, record)
+    await this.distribuitedPackRepository.save(agentContext,record)
     return record
   }
 

@@ -4,7 +4,7 @@ import { CredoError } from '../../../error'
 import { BaseRecord } from '../../../storage/BaseRecord'
 import { uuid } from '../../../utils/uuid'
 import { DistribuitedPackRole, DistribuitedPackState } from '../models'
-import { EncryptedMessage } from '../../../types'
+import { EncryptedMessage, PlaintextMessage } from '../../../types'
 import { AgentMessage } from 'packages/core/src/agent/AgentMessage'
 import { EnvelopeKeys } from 'packages/core/src/agent/EnvelopeService'
 import { ResolvedDidCommService } from '../../didcomm/types'
@@ -12,10 +12,11 @@ import { ResolvedDidCommService } from '../../didcomm/types'
 
 export interface DistribuitedPackRecordProps {
   id?: string,
-  payload: AgentMessage,
-  keys: EnvelopeKeys,
+  payload: PlaintextMessage,
+  recipientKeyBase58: string,
+  senderKeyBase58: string,
   endpoint: string,
-  service: ResolvedDidCommService,
+  serviceId: string,
   connectionId?:string
   state: DistribuitedPackState,
   role: DistribuitedPackRole
@@ -31,10 +32,11 @@ export class DistribuitedPackRecord extends BaseRecord<DefaultDistribuitedPackTa
   public state!: DistribuitedPackState
   public role!: DistribuitedPackRole
 
-  public payload!: AgentMessage
-  public keys!: EnvelopeKeys
+  public payload!: PlaintextMessage
+  public recipientKeyBase58!: string
+  public senderKeyBase58!: string
   public endpoint!: string
-  public service!: ResolvedDidCommService
+  public serviceId!: string
   public connectionId?:string
   
 
@@ -47,11 +49,12 @@ export class DistribuitedPackRecord extends BaseRecord<DefaultDistribuitedPackTa
     if (props) {
       this.id = props.id ?? uuid()
       this.payload=props.payload
-      this.keys = props.keys
+      this.recipientKeyBase58 = props.recipientKeyBase58
+      this.senderKeyBase58 = props.senderKeyBase58
       this.endpoint = props.endpoint
       this.state = props.state
       this.role = props.role
-      this.service = props.service
+      this.serviceId = props.serviceId
       this.connectionId = props.connectionId
     }
   }

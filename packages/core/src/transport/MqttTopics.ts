@@ -12,4 +12,6 @@ export const getInboundTopics = (deviceId: string): string[] => [
   `${deviceId}/pubKey/response`,
   `${deviceId}/signatureExchange/response`,
   `${deviceId}/cekExchange/response`,
+  `${deviceId}/distribuitedPack/response`,
+  
 ];

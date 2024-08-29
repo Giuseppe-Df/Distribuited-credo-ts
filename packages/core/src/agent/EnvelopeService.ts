@@ -62,7 +62,7 @@ export class EnvelopeService {
 
   public async distribuitedPackMessage(
     agentContext: AgentContext,
-    payload: AgentMessage,
+    payload: PlaintextMessage,
     keys: EnvelopeKeys,
     keyId: string,
     cekNonceHex: string,
@@ -72,16 +72,13 @@ export class EnvelopeService {
     let recipientKeysBase58 = recipientKeys.map((key) => key.publicKeyBase58)
     const routingKeysBase58 = routingKeys.map((key) => key.publicKeyBase58)
     const senderKeyBase58 = senderKey && senderKey.publicKeyBase58
-
     if (!senderKeyBase58){
       throw new CredoError("Unable to process distribuited pack without sender key")
     }
     // pass whether we want to use legacy did sov prefix
-    const message = payload.toJSON({ useDidSovPrefixWhereAllowed: agentContext.config.useDidSovPrefixWhereAllowed })
+    this.logger.debug(`Distribuited pack outbound message ${payload['@type']}`)
 
-    this.logger.debug(`Distribuited pack outbound message ${message['@type']}`)
-
-    let encryptedMessage = await agentContext.wallet.distribuitedPack(message, recipientKeysBase58[0],keyId, senderKeyBase58, cekNonceHex, encryptedCekHex)
+    let encryptedMessage = await agentContext.wallet.distribuitedPack(payload, recipientKeysBase58[0],keyId, senderKeyBase58, cekNonceHex, encryptedCekHex)
 
 
     return encryptedMessage

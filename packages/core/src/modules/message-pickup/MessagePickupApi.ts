@@ -31,6 +31,8 @@ import { ConnectionService } from '../connections/services'
 import { MessagePickupEventTypes } from './MessagePickupEvents'
 import { MessagePickupModuleConfig } from './MessagePickupModuleConfig'
 import { MessagePickupSessionService } from './services/MessagePickupSessionService'
+import { ConnectionsModuleConfig } from '../connections/ConnectionsModuleConfig'
+import { DistribuitedPackApi } from '../distribuited-pack'
 
 export interface MessagePickupApi<MPPs extends MessagePickupProtocol[]> {
   queueMessage(options: QueueMessageOptions): Promise<QueueMessageReturnType>
@@ -147,11 +149,13 @@ export class MessagePickupApi<MPPs extends MessagePickupProtocol[] = [V1MessageP
     })
 
     if (createDeliveryReturn) {
+      const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+      const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
       await this.messageSender.sendMessage(
-        new OutboundMessageContext(createDeliveryReturn.message, {
+        new OutboundMessageContext(createDeliveryReturn.message,{
           agentContext: this.agentContext,
           connection: connectionRecord,
-        })
+        }), config, api
       )
     }
   }
@@ -185,11 +189,13 @@ export class MessagePickupApi<MPPs extends MessagePickupProtocol[] = [V1MessageP
     })
 
     if (deliverMessagesReturn) {
+      const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+      const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
       await this.messageSender.sendMessage(
         new OutboundMessageContext(deliverMessagesReturn.message, {
           agentContext: this.agentContext,
           connection: connectionRecord,
-        })
+        }), config,api
       )
     }
   }
@@ -242,7 +248,9 @@ export class MessagePickupApi<MPPs extends MessagePickupProtocol[] = [V1MessageP
 
     // For picking up messages we prefer a long-lived transport session, so we will set a higher priority to
     // WebSocket endpoints. However, it is not extrictly required.
-    await this.messageSender.sendMessage(outboundMessageContext, { transportPriority: { schemes: ['wss', 'ws'] } })
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+    await this.messageSender.sendMessage(outboundMessageContext,config,api, { transportPriority: { schemes: ['wss', 'ws'] } })
 
     if (options.awaitCompletion) {
       await firstValueFrom(replaySubject)
@@ -262,13 +270,15 @@ export class MessagePickupApi<MPPs extends MessagePickupProtocol[] = [V1MessageP
       connectionRecord,
       liveDelivery: options.liveDelivery,
     })
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
 
     // Live mode requires a long-lived transport session, so we'll require WebSockets to send this message
     await this.messageSender.sendMessage(
       new OutboundMessageContext(message, {
         agentContext: this.agentContext,
         connection: connectionRecord,
-      }),
+      }),config,api,
       { transportPriority: { schemes: ['wss', 'ws'], restrictive: options.liveDelivery } }
     )
   }

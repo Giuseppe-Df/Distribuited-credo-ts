@@ -11,6 +11,8 @@ import { MediatorModuleConfig } from './MediatorModuleConfig'
 import { ForwardHandler, KeylistUpdateHandler } from './handlers'
 import { MediationRequestHandler } from './handlers/MediationRequestHandler'
 import { MediatorService } from './services/MediatorService'
+import { ConnectionsModuleConfig } from '../connections'
+import { DistribuitedPackApi } from '../distribuited-pack'
 
 @injectable()
 export class MediatorApi {
@@ -64,7 +66,10 @@ export class MediatorApi {
       associatedRecord: mediationRecord,
     })
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return mediationRecord
   }

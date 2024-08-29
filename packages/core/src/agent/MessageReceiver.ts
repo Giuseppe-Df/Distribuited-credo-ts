@@ -26,6 +26,7 @@ import { AgentContextProvider } from './context'
 import { InboundMessageContext, OutboundMessageContext } from './models'
 import { PubKeyApi } from '../modules/pubkey'
 import { JsonEncoder } from '../utils/JsonEncoder'
+import { DistribuitedPackApi } from '../modules/distribuited-pack'
 
 @injectable()
 export class MessageReceiver {
@@ -345,7 +346,9 @@ export class MessageReceiver {
     })
     const outboundMessageContext = new OutboundMessageContext(problemReportMessage, { agentContext, connection })
     if (outboundMessageContext) {
-      await this.messageSender.sendMessage(outboundMessageContext)
+      const config = agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+      const api = agentContext.dependencyManager.resolve(DistribuitedPackApi)
+      await this.messageSender.sendMessage(outboundMessageContext, config, api)
     }
   }
 }

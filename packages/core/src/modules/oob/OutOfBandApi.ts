@@ -28,7 +28,7 @@ import {
   supportsIncomingMessageType,
 } from '../../utils/messageType'
 import { parseInvitationShortUrl } from '../../utils/parseInvitation'
-import { ConnectionsApi, DidExchangeState, HandshakeProtocol } from '../connections'
+import { ConnectionsApi, ConnectionsModuleConfig, DidExchangeState, HandshakeProtocol } from '../connections'
 import { DidCommDocumentService } from '../didcomm'
 import { DidKey } from '../dids'
 import { outOfBandServiceToInlineKeysNumAlgo2Did } from '../dids/methods/peer/peerDidNumAlgo2'
@@ -46,6 +46,7 @@ import { InvitationType, OutOfBandInvitation } from './messages'
 import { OutOfBandRepository } from './repository'
 import { OutOfBandRecord } from './repository/OutOfBandRecord'
 import { OutOfBandRecordMetadataKeys } from './repository/outOfBandRecordMetadataTypes'
+import { DistribuitedPackApi } from '../distribuited-pack'
 
 const didCommProfiles = ['didcomm/aip1', 'didcomm/aip2;env=rfc19']
 
@@ -936,7 +937,11 @@ export class OutOfBandApi {
       agentContext: this.agentContext,
       connection: connectionRecord,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+    
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return reuseAcceptedEventPromise
   }

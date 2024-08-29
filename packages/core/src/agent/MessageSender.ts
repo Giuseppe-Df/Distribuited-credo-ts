@@ -20,7 +20,7 @@ import { getKeyFromVerificationMethod } from '../modules/dids/domain/key-type'
 import { didKeyToInstanceOfKey, verkeyToDidKey } from '../modules/dids/helpers'
 import { DidResolverService } from '../modules/dids/services/DidResolverService'
 import { MessagePickupRepository } from '../modules/message-pickup/storage'
-import { inject, injectable } from '../plugins'
+import { inject, injectable, delay } from '../plugins'
 import { MessageValidator } from '../utils/MessageValidator'
 import { getProtocolScheme } from '../utils/uri'
 
@@ -46,9 +46,9 @@ export class MessageSender {
   private didResolverService: DidResolverService
   private didCommDocumentService: DidCommDocumentService
   private eventEmitter: EventEmitter
-  private distribuitedPackApi: DistribuitedPackApi
   private _outboundTransports: OutboundTransport[] = []
   private _mqttTransport: MqttTransport| undefined| null
+  
 
   public constructor(
     envelopeService: EnvelopeService,
@@ -57,8 +57,9 @@ export class MessageSender {
     @inject(InjectionSymbols.Logger) logger: Logger,
     didResolverService: DidResolverService,
     didCommDocumentService: DidCommDocumentService,
-    distribuitedPackApi: DistribuitedPackApi,
-    eventEmitter: EventEmitter
+    eventEmitter: EventEmitter,
+    /*@inject(delay(() => ConnectionsModuleConfig)) connectionConfig: ConnectionsModuleConfig,
+    @inject(delay(() => DistribuitedPackApi)) distribuitedPackApi: DistribuitedPackApi*/
   ) {
     this.envelopeService = envelopeService
     this.transportService = transportService
@@ -66,7 +67,6 @@ export class MessageSender {
     this.logger = logger
     this.didResolverService = didResolverService
     this.didCommDocumentService = didCommDocumentService
-    this.distribuitedPackApi = distribuitedPackApi
     this.eventEmitter = eventEmitter
     this._outboundTransports = []
   }
@@ -234,9 +234,11 @@ export class MessageSender {
 
   public async sendMessage(
     outboundMessageContext: OutboundMessageContext,
+    config?:ConnectionsModuleConfig,
+    api?: DistribuitedPackApi,
     options?: {
       transportPriority?: TransportPriorityOptions
-    }
+    }    
   ) {
     const { agentContext, connection, outOfBand, message } = outboundMessageContext
     const errors: Error[] = []
@@ -343,7 +345,7 @@ export class MessageSender {
               returnRoute: shouldAddReturnRoute,
             },
             connection,
-          })
+          }), config,api
         )
         this.emitMessageSentEvent(outboundMessageContext, OutboundMessageSendStatus.SentToTransport)
         return
@@ -431,7 +433,7 @@ export class MessageSender {
     }
   }
 
-  private async sendToService(outboundMessageContext: OutboundMessageContext) {
+  private async sendToService(outboundMessageContext: OutboundMessageContext, config?: ConnectionsModuleConfig,api?:DistribuitedPackApi) {
     const { agentContext, message, serviceParams, connection } = outboundMessageContext
 
     if (!serviceParams) {
@@ -468,9 +470,8 @@ export class MessageSender {
       throw error
     }
 
-    const config = agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
-    if( config.useRemoteKeyExchangeProtocol){
-      await this.distribuitedPackApi.distribuitedPack(keys, message,service.serviceEndpoint, service, connection?.id)
+    if( config?.useRemoteKeyExchangeProtocol){
+      await api?.distribuitedPack(keys, message,service.serviceEndpoint, service, connection?.id)
       return
     }
 

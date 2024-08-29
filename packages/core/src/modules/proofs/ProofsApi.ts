@@ -36,6 +36,8 @@ import { ConnectionService } from '../connections/services/ConnectionService'
 import { ProofsModuleConfig } from './ProofsModuleConfig'
 import { ProofState } from './models/ProofState'
 import { ProofRepository } from './repository/ProofRepository'
+import { ConnectionsModuleConfig } from '../connections'
+import { DistribuitedPackApi } from '../distribuited-pack'
 
 export interface ProofsApi<PPs extends ProofProtocol[]> {
   // Proposal methods
@@ -152,7 +154,10 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
       connectionRecord,
     })
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
     return proofRecord
   }
 
@@ -196,7 +201,10 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
       connectionRecord,
     })
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
     return proofRecord
   }
 
@@ -238,7 +246,11 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
       associatedRecord: proofRecord,
       connectionRecord,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return proofRecord
   }
@@ -274,7 +286,10 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
       connectionRecord,
     })
 
-    await this.messageSender.sendMessage(outboundMessageContext)
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
     return proofRecord
   }
 
@@ -317,7 +332,11 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
       associatedRecord: proofRecord,
       lastReceivedMessage: requestMessage,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return proofRecord
   }
@@ -376,7 +395,11 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
       connectionRecord,
       associatedRecord: proofRecord,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return proofRecord
   }
@@ -445,7 +468,11 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
       lastSentMessage: requestMessage,
       lastReceivedMessage: presentationMessage,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return proofRecord
   }
@@ -529,7 +556,11 @@ export class ProofsApi<PPs extends ProofProtocol[]> implements ProofsApi<PPs> {
       associatedRecord: proofRecord,
       lastReceivedMessage: requestMessage ?? undefined,
     })
-    await this.messageSender.sendMessage(outboundMessageContext)
+
+    const config = this.agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    const api = this.agentContext.dependencyManager.resolve(DistribuitedPackApi)
+
+    await this.messageSender.sendMessage(outboundMessageContext,config,api)
 
     return proofRecord
   }
