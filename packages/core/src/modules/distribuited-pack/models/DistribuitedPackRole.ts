@@ -1,4 +1,4 @@
-export enum CekRole {
+export enum DistribuitedPackRole {
     Requester = 'requester',
     Responder = 'responder',
   }

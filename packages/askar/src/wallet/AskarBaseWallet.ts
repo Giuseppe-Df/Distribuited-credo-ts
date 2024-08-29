@@ -38,7 +38,7 @@ import {
 } from '../utils'
 import { convertToAskarKeyBackend } from '../utils/askarKeyBackend'
 
-import { didcommV1Pack, didcommV1Unpack, didcommV1DistribuitedUnpack } from './didcommV1'
+import { didcommV1Pack, didcommV1Unpack, didcommV1DistribuitedUnpack, didcommV1DistribuitedPack } from './didcommV1'
 import { PlaintextMessage } from 'packages/core/src/types'
 
 const isError = (error: unknown): error is Error => error instanceof Error
@@ -421,6 +421,29 @@ export abstract class AskarBaseWallet implements Wallet {
       return envelope
     } finally {
       senderKey?.key.handle.free()
+    }
+  }
+
+  public async distribuitedPack(
+    payload: Record<string, unknown>,
+    recipientKey: string,
+    keyId: string,
+    senderKeyBase58: string,
+    cekNonceHex: string,
+    encryptedCekHex: string
+  ): Promise<EncryptedMessage> {
+    const cek = keyId
+      ? await this.withSession((session) => session.fetchKey({ name: keyId }))
+      : undefined
+
+    try {
+      if (!cek) {
+        throw new WalletError(`Cek not found`)
+      }
+      const envelope = didcommV1DistribuitedPack(cek.key,cekNonceHex, encryptedCekHex, payload, recipientKey, senderKeyBase58)
+      return envelope
+    } finally {
+      cek?.key.handle.free()
     }
   }
 

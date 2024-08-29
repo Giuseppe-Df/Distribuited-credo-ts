@@ -1,2 +1,2 @@
-export * from './CekRecord'
-export * from './CekRepository'
+export * from './DistribuitedPackRecord'
+export * from './DistribuitedPackRepository'

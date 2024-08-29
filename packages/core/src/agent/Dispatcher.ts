@@ -17,7 +17,9 @@ import { MessageHandlerMiddlewareRunner } from './MessageHandlerMiddleware'
 import { MessageHandlerRegistry } from './MessageHandlerRegistry'
 import { MessageSender } from './MessageSender'
 import { OutboundMessageContext } from './models'
+import {OutboundPackage} from '../types'
 import { DidExchangeRequestMessage } from '../modules/connections'
+import { ResolvedDidCommService } from '../modules/didcomm/types'
 
 @injectable()
 class Dispatcher {
@@ -58,7 +60,7 @@ class Dispatcher {
     }
 
     const outboundMessage = await messageHandler.handle(inboundMessageContext)
-    if (outboundMessage) {
+    if (outboundMessage && outboundMessage instanceof OutboundMessageContext) {
       inboundMessageContext.setResponseMessage(outboundMessage)
     }
 
@@ -146,7 +148,7 @@ class Dispatcher {
   public async dispatchMessage(messageContext: InboundMessageContext): Promise<void> {
     const { agentContext, message } = messageContext
 
-    let outboundMessage: OutboundMessageContext<AgentMessage> | void = undefined
+    let outboundMessage: OutboundMessageContext<AgentMessage> | void |{ outboundPackage: OutboundPackage, service: ResolvedDidCommService } = undefined
 
     // Set default handler if available, middleware can still override the message handler
     const messageHandler = this.messageHandlerRegistry.getHandlerForMessageType(message.type)
@@ -154,8 +156,10 @@ class Dispatcher {
       outboundMessage = await messageHandler.handle(messageContext)
     }
 
-    if (outboundMessage){
+    if (outboundMessage && outboundMessage instanceof OutboundMessageContext){
       await this.messageSender.sendMessage(outboundMessage)
+    }else if (outboundMessage && 'outboundPackage' in outboundMessage && 'service' in outboundMessage){
+      await this.messageSender.sendDistribuitedPackMessage(outboundMessage.outboundPackage, outboundMessage.service)
     }
   }
 

@@ -1,10 +1,12 @@
+import { ResolvedDidCommService } from '../modules/didcomm/types'
+import { OutboundPackage } from '../types'
 import type { ConstructableAgentMessage } from './AgentMessage'
 import type { InboundMessageContext, OutboundMessageContext } from './models'
 
 export interface MessageHandler {
   readonly supportedMessages: readonly ConstructableAgentMessage[]
 
-  handle(messageContext: InboundMessageContext): Promise<OutboundMessageContext | void>
+  handle(messageContext: InboundMessageContext): Promise<OutboundMessageContext | void | {outboundPackage:OutboundPackage, service:ResolvedDidCommService}>
 }
 
 /**

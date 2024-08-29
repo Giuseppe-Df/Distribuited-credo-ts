@@ -57,6 +57,14 @@ export interface Wallet extends Disposable {
   verify(options: WalletVerifyOptions): Promise<boolean>
 
   pack(payload: Record<string, unknown>, recipientKeys: string[], senderVerkey?: string): Promise<EncryptedMessage>
+  distribuitedPack(
+    payload: Record<string, unknown>,
+    recipientKey: string,
+    keyId: string,
+    senderKeyBase58: string,
+    cekNonceHex: string,
+    encryptedCekHex: string
+  ): Promise<EncryptedMessage>
   unpack(encryptedMessage: EncryptedMessage): Promise<UnpackedMessageContext>
   distribuitedUnpack(encryptedMessage: EncryptedMessage,payloadKey: string): Promise<PlaintextMessage>
   generateNonce(): Promise<string>

@@ -1,5 +1,5 @@
 import type { AgentContext } from '../../../agent'
-import type { CekRole } from '../models'
+import type { DistribuitedPackRole } from '../models'
 
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { InjectionSymbols } from '../../../constants'
@@ -7,19 +7,19 @@ import { injectable, inject } from '../../../plugins'
 import { Repository } from '../../../storage/Repository'
 import { StorageService } from '../../../storage/StorageService'
 
-import { CekRecord } from './CekRecord'
+import { DistribuitedPackRecord } from './DistribuitedPackRecord'
 
 @injectable()
-export class CekRepository extends Repository<CekRecord> {
+export class DistribuitedPackRepository extends Repository<DistribuitedPackRecord> {
   public constructor(
-    @inject(InjectionSymbols.StorageService) storageService: StorageService<CekRecord>,
+    @inject(InjectionSymbols.StorageService) storageService: StorageService<DistribuitedPackRecord>,
     eventEmitter: EventEmitter
   ) {
-    super(CekRecord, storageService, eventEmitter)
+    super(DistribuitedPackRecord, storageService, eventEmitter)
   }
 
 
-  public getById(agentContext: AgentContext, id: string): Promise<CekRecord> {
+  public getById(agentContext: AgentContext, id: string): Promise<DistribuitedPackRecord> {
     return this.getSingleByQuery(agentContext, { id })
   }
 

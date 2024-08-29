@@ -33,6 +33,7 @@ import {
   MqttTransport,
   LogLevel,
   PubKeyModule,
+  DistribuitedPackModule,
   CekModule
 } from '@credo-ts/core'
 import { IndyVdrIndyDidResolver, IndyVdrAnonCredsRegistry, IndyVdrModule } from '@credo-ts/indy-vdr'
@@ -102,6 +103,7 @@ function getAskarAnonCredsIndyModules() {
   const legacyIndyProofFormatService = new LegacyIndyProofFormatService()
   return {
     pubkey: new PubKeyModule(),
+    distribuitedPack: new DistribuitedPackModule(),
     cekExchange: new CekModule(),
     connections: new ConnectionsModule({
       autoAcceptConnections: true,

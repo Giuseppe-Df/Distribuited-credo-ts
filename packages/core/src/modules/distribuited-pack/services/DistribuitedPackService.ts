@@ -5,13 +5,14 @@ import { EventEmitter } from '../../../agent/EventEmitter'
 import { filterContextCorrelationId } from '../../../agent/Events'
 import { Logger } from '../../../logger'
 
-import { CekRecordProps } from '../repository/CekRecord'
-import { CekRecord } from '../repository/CekRecord'
-import { CekState, CekRole } from '../models'
-import { CekRepository } from '../repository'
+import { DistribuitedPackRecordProps } from '../repository/DistribuitedPackRecord'
+import { DistribuitedPackRecord } from '../repository/DistribuitedPackRecord'
+import { DistribuitedPackState, DistribuitedPackRole } from '../models'
+import { DistribuitedPackRepository } from '../repository'
 import { DistribuitedPackRequestMessage, DistribuitedPackResponseMessage } from '../messages'
 import { PubKeyApi } from '../../pubkey/PubKeyApi'
 import { EnvelopeKeys, EnvelopeService } from '../../../agent/EnvelopeService'
+
 
 import { inject, injectable } from '../../../plugins'
 import { InjectionSymbols } from '../../../constants'
@@ -20,13 +21,14 @@ import { JsonEncoder } from '../../../utils/JsonEncoder'
 import { firstValueFrom, ReplaySubject } from 'rxjs'
 import {CredoError} from '../../../error'
 import { TypedArrayEncoder } from '../../../utils'
+import { ResolvedDidCommService } from '../../didcomm/types'
 
 
 @injectable()
 export class DistribuitedPackService {
   private pubKeyApi: PubKeyApi
   private envelopeService: EnvelopeService
-  private cekRepository: CekRepository
+  private distribuitedPackRepository: DistribuitedPackRepository
   private eventEmitter: EventEmitter
   private logger: Logger
 
@@ -34,12 +36,12 @@ export class DistribuitedPackService {
     @inject(InjectionSymbols.Logger) logger: Logger,
     pubKeyApi: PubKeyApi,
     envelopeService: EnvelopeService,
-    cekRepository: CekRepository,
+    distribuitedPackRepository: DistribuitedPackRepository,
     eventEmitter: EventEmitter
   ) {
     this.pubKeyApi = pubKeyApi
     this.envelopeService = envelopeService
-    this.cekRepository = cekRepository
+    this.distribuitedPackRepository = distribuitedPackRepository
     this.eventEmitter = eventEmitter
     this.logger = logger
   }
@@ -51,10 +53,14 @@ export class DistribuitedPackService {
       keys,
       payload,
       endpoint,
+      service,
+      connectionId
     }: {
       keys: EnvelopeKeys
       payload: AgentMessage
       endpoint: string
+      service:ResolvedDidCommService
+      connectionId?:string
     }
   ): Promise<DistribuitedPackMsgReturnType<DistribuitedPackRequestMessage>> {
     this.logger.debug("Creating Distribuited Pack Request")
@@ -68,66 +74,52 @@ export class DistribuitedPackService {
       throw new CredoError("Device key and Sender key does not match")
     }
 
-    const record= await this.createRecord()
-
-    const cek= await agentContext.wallet.createCek("record.id")
-    const message = new DistribuitedPackRequestMessage({cek, recipientKey,dataId:record.id})
-
-    /*const protectedJson = JsonEncoder.fromBase64(encryptedMessage.protected)
-    const recipientKids: string[] = protectedJson.recipients.map((r: any) => r.header.kid)
-    const verKey = await this.pubKeyApi.getPublicKey()
-    
-    const recipientKeyFound = recipientKids.some((recipientKid) => {recipientKid === verKey.publicKeyBase58})
-    const recipient = protectedJson.recipients.find((r: any) => r.header.kid === verKey.publicKeyBase58)
-    if (!recipientKeyFound || !recipient){
-      throw new CredoError("No corresponding recipient key found")
-    }
-
-    const alg = protectedJson.alg
-    if (!['Anoncrypt'].includes(alg)) {
-      throw new CredoError(`Unsupported pack algorithm: ${alg}`)
-    }
-
-    const cekRecord = await this.createRecord(agentContext, {
-        encryptedMessage,
-        role:CekRole.Requester,
-        state:CekState.Start      
+    const record= await this.createRecord(agentContext,{
+      payload,
+      keys,
+      endpoint,
+      service,
+      connectionId,
+      state: DistribuitedPackState.Start,
+      role: DistribuitedPackRole.Requester
     })
-    const encryptedKey_buffer= TypedArrayEncoder.fromBase64(recipient.encrypted_key)
-    const encryptedKey_hex= TypedArrayEncoder.toHex(encryptedKey_buffer)
-    const message = new CekRequestMessage({encryptedKey:encryptedKey_hex, dataId: cekRecord.id})*/
+
+    const cek= await agentContext.wallet.createCek(record.id)
+    const message = new DistribuitedPackRequestMessage({cek, recipientKey,dataId:record.id})
     
     return {
-      message,
+      messageToSend: message,
       record
     }
   }
 
-  public async processResponse(message:DistribuitedPackResponseMessage, agentContext:AgentContext):Promise<void>{
-    const cekRecord = await this.getById(agentContext,message.dataId)
+  public async processResponse(message:DistribuitedPackResponseMessage, agentContext:AgentContext):Promise<{encryptedMessage:EncryptedMessage, endpoint:string, connectionId?:string, service: ResolvedDidCommService}>{
     
-    const decryptedMessage = await this.envelopeService.unpackMessageCek(agentContext,cekRecord.encryptedMessage,message.payloadKey)
-    agentContext.config.logger.debug("ci sono riuscito",decryptedMessage)
+    const dataId = message.dataId
+    const record = await this.getById(agentContext,dataId)
+    const encryptedMessage = await this.envelopeService.distribuitedPackMessage(agentContext,record.payload,record.keys, dataId,message.nonce, message.encryptedCek)
+
+    return {encryptedMessage, endpoint: record.endpoint, connectionId:record.connectionId, service: record.service}
     
 
   }
 
-  public async createRecord(agentContext: AgentContext, options: CekRecordProps): Promise<CekRecord> {
-    const cekRecord = new CekRecord(options)
-    await this.cekRepository.save(agentContext, cekRecord)
-    return cekRecord
+  public async createRecord(agentContext: AgentContext, options: DistribuitedPackRecordProps): Promise<DistribuitedPackRecord> {
+    const record = new DistribuitedPackRecord(options)
+    await this.distribuitedPackRepository.save(agentContext, record)
+    return record
   }
 
-  public async updateState(agentContext: AgentContext, cekRecord: CekRecord, newState: CekState) {
-    const previousState = cekRecord.state
-    cekRecord.state = newState
-    await this.cekRepository.update(agentContext, cekRecord)
+  public async updateState(agentContext: AgentContext, record: DistribuitedPackRecord, newState: DistribuitedPackState) {
+    const previousState = record.state
+    record.state = newState
+    await this.distribuitedPackRepository.update(agentContext, record)
 
     //this.emitStateChangedEvent(agentContext, connectionRecord, previousState)
   }
 
-  public update(agentContext: AgentContext, cekRecord: CekRecord) {
-    return this.cekRepository.update(agentContext, cekRecord)
+  public update(agentContext: AgentContext, record: DistribuitedPackRecord) {
+    return this.distribuitedPackRepository.update(agentContext, record)
   }
 
 
@@ -137,7 +129,7 @@ export class DistribuitedPackService {
    * @returns List containing all connection records
    */
   public getAll(agentContext: AgentContext) {
-    return this.cekRepository.getAll(agentContext)
+    return this.distribuitedPackRepository.getAll(agentContext)
   }
 
   /**
@@ -148,14 +140,14 @@ export class DistribuitedPackService {
    * @return The pubkey record
    *
    */
-  public getById(agentContext: AgentContext, cekId: string): Promise<CekRecord> {
-    return this.cekRepository.getById(agentContext, cekId)
+  public getById(agentContext: AgentContext, id: string): Promise<DistribuitedPackRecord> {
+    return this.distribuitedPackRepository.getById(agentContext, id)
   }
 
 
 }
 
 export interface DistribuitedPackMsgReturnType<MessageType extends AgentMessage> {
-  message: MessageType
-  record: CekRecord
+  messageToSend: MessageType
+  record: DistribuitedPackRecord
 }

@@ -1,4 +1,4 @@
-export enum CekState {
+export enum DistribuitedPackState {
     Start = 'start',
     RequestSent = 'request-sent',
     RequestReceived = 'request-received',

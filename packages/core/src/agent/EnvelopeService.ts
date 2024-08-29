@@ -7,6 +7,7 @@ import { Key, KeyType } from '../crypto'
 import { Logger } from '../logger'
 import { ForwardMessage } from '../modules/routing/messages'
 import { inject, injectable } from '../plugins'
+import { CredoError } from '../error'
 
 export interface EnvelopeKeys {
   recipientKeys: Key[]
@@ -55,6 +56,33 @@ export class EnvelopeService {
       // Forward messages are anon packed
       encryptedMessage = await agentContext.wallet.pack(forwardJson, [routingKeyBase58], undefined)
     }
+
+    return encryptedMessage
+  }
+
+  public async distribuitedPackMessage(
+    agentContext: AgentContext,
+    payload: AgentMessage,
+    keys: EnvelopeKeys,
+    keyId: string,
+    cekNonceHex: string,
+    encryptedCekHex: string
+  ): Promise<EncryptedMessage> {
+    const { recipientKeys, routingKeys, senderKey } = keys
+    let recipientKeysBase58 = recipientKeys.map((key) => key.publicKeyBase58)
+    const routingKeysBase58 = routingKeys.map((key) => key.publicKeyBase58)
+    const senderKeyBase58 = senderKey && senderKey.publicKeyBase58
+
+    if (!senderKeyBase58){
+      throw new CredoError("Unable to process distribuited pack without sender key")
+    }
+    // pass whether we want to use legacy did sov prefix
+    const message = payload.toJSON({ useDidSovPrefixWhereAllowed: agentContext.config.useDidSovPrefixWhereAllowed })
+
+    this.logger.debug(`Distribuited pack outbound message ${message['@type']}`)
+
+    let encryptedMessage = await agentContext.wallet.distribuitedPack(message, recipientKeysBase58[0],keyId, senderKeyBase58, cekNonceHex, encryptedCekHex)
+
 
     return encryptedMessage
   }

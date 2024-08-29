@@ -92,12 +92,12 @@ export function didcommV1Pack(payload: Record<string, unknown>, recipientKeys: s
   }
 }
 
-export function didcommV1DistribuitedPack(cek:AskarKey, cekNonceHex: string, encryptedCekHex: string, payload: Record<string, unknown>, recipientKey: string, senderKey?: AskarKey) {
+export function didcommV1DistribuitedPack(cek:AskarKey, cekNonceHex: string, encryptedCekHex: string, payload: Record<string, unknown>, recipientKey: string, senderKeyBase58 : string) {
   let targetExchangeKey: AskarKey | undefined
 
   try {
 
-    if (!senderKey){
+    if (!senderKeyBase58){
       throw new WalletError("Unable to process distribuited pack without senderKey")
     }
 
@@ -106,9 +106,11 @@ export function didcommV1DistribuitedPack(cek:AskarKey, cekNonceHex: string, enc
       algorithm: KeyAlgs.Ed25519,
     }).convertkey({ algorithm: KeyAlgs.X25519 })
 
+    const senderKey = TypedArrayEncoder.fromBase58(senderKeyBase58)
+
     const encryptedSender = CryptoBox.seal({
       recipientKey: targetExchangeKey,
-      message: TypedArrayEncoder.fromString(TypedArrayEncoder.toBase58(senderKey.publicBytes)),
+      message: TypedArrayEncoder.fromString(TypedArrayEncoder.toBase58(senderKey)),
     })
     const cekNonce = TypedArrayEncoder.fromHex(cekNonceHex)
     const encryptedCek = TypedArrayEncoder.fromHex(encryptedCekHex)

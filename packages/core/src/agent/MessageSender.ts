@@ -3,7 +3,7 @@ import type { EnvelopeKeys } from './EnvelopeService'
 import type { AgentMessageSentEvent } from './Events'
 import type { TransportSession } from './TransportService'
 import type { AgentContext } from './context'
-import type { ConnectionRecord } from '../modules/connections'
+import { ConnectionsModuleConfig, type ConnectionRecord } from '../modules/connections'
 import type { ResolvedDidCommService } from '../modules/didcomm'
 import type { OutOfBandRecord } from '../modules/oob/repository'
 import type { OutboundTransport } from '../transport/OutboundTransport'
@@ -28,6 +28,7 @@ import { EnvelopeService } from './EnvelopeService'
 import { EventEmitter } from './EventEmitter'
 import { AgentEventTypes } from './Events'
 import { TransportService } from './TransportService'
+import { DistribuitedPackApi } from '../modules/distribuited-pack'
 import { OutboundMessageContext, OutboundMessageSendStatus } from './models'
 
 export interface TransportPriorityOptions {
@@ -38,12 +39,14 @@ export interface TransportPriorityOptions {
 @injectable()
 export class MessageSender {
   private envelopeService: EnvelopeService
+
   private transportService: TransportService
   private messagePickupRepository: MessagePickupRepository
   private logger: Logger
   private didResolverService: DidResolverService
   private didCommDocumentService: DidCommDocumentService
   private eventEmitter: EventEmitter
+  private distribuitedPackApi: DistribuitedPackApi
   private _outboundTransports: OutboundTransport[] = []
   private _mqttTransport: MqttTransport| undefined| null
 
@@ -54,6 +57,7 @@ export class MessageSender {
     @inject(InjectionSymbols.Logger) logger: Logger,
     didResolverService: DidResolverService,
     didCommDocumentService: DidCommDocumentService,
+    distribuitedPackApi: DistribuitedPackApi,
     eventEmitter: EventEmitter
   ) {
     this.envelopeService = envelopeService
@@ -62,6 +66,7 @@ export class MessageSender {
     this.logger = logger
     this.didResolverService = didResolverService
     this.didCommDocumentService = didCommDocumentService
+    this.distribuitedPackApi = distribuitedPackApi
     this.eventEmitter = eventEmitter
     this._outboundTransports = []
   }
@@ -438,11 +443,6 @@ export class MessageSender {
       throw new CredoError('Agent has no outbound transport!')
     }
 
-    this.logger.debug(`Sending outbound message to service:`, {
-      messageId: message.id,
-      service: { ...service, recipientKeys: 'omitted...', routingKeys: 'omitted...' },
-    })
-
     const keys = {
       recipientKeys: service.recipientKeys,
       routingKeys: service.routingKeys,
@@ -468,6 +468,17 @@ export class MessageSender {
       throw error
     }
 
+    const config = agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
+    if( config.useRemoteKeyExchangeProtocol){
+      await this.distribuitedPackApi.distribuitedPack(keys, message,service.serviceEndpoint, service, connection?.id)
+      return
+    }
+
+    this.logger.debug(`Sending outbound message to service:`, {
+      messageId: message.id,
+      service: { ...service, recipientKeys: 'omitted...', routingKeys: 'omitted...' },
+    })
+
     const outboundPackage = await this.packMessage(agentContext, { message, keys, endpoint: service.serviceEndpoint })
     outboundPackage.endpoint = service.serviceEndpoint
     outboundPackage.connectionId = connection?.id
@@ -483,6 +494,23 @@ export class MessageSender {
     throw new MessageSendingError(`Unable to send message to service: ${service.serviceEndpoint}`, {
       outboundMessageContext,
     })
+  }
+
+  public async sendDistribuitedPackMessage(outboundPackage: OutboundPackage, service: ResolvedDidCommService) {
+    try{
+      for (const transport of this.outboundTransports) {
+        const protocolScheme = getProtocolScheme(service.serviceEndpoint)
+        if (!protocolScheme) {
+          this.logger.warn('Service does not have a protocol scheme.')
+        } else if (transport.supportedSchemes.includes(protocolScheme)) {
+          await transport.sendMessage(outboundPackage)
+          return
+        }
+      }
+    }catch (err){
+      throw new CredoError(err)
+    }
+
   }
 
   private findSessionForOutboundContext(outboundContext: OutboundMessageContext) {
