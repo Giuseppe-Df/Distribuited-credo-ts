@@ -35,7 +35,7 @@ export class SignatureExchangeProtocol {
   public async createRequest(agentContext:AgentContext, storedMessage: DidExchangeRequestMessage, connectionId:string, didDoc:DidDocument,parentid:string) : Promise <void>{
     
     const {message, signatureRecord} = await this.signatureExchangeService.createRequest(agentContext, {
-      message: storedMessage,
+      message: storedMessage.toJSON(),
       connectionId: connectionId,
       didDocument: didDoc,
       parentid:parentid

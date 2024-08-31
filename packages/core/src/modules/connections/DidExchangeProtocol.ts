@@ -155,6 +155,7 @@ export class DidExchangeProtocol {
     }
 
     await this.updateState(agentContext, DidExchangeRequestMessage.type, connectionRecord)
+    this.logger.debug("!!!!!!!!!!!!connection record salvato e message!!!!!!!!!!!",{connectionRecord, message})
 
     if (!useRemoteKeyExchangeProtocol){
       this.logger.debug(`Create message ${DidExchangeRequestMessage.type.messageTypeUri} end`, {

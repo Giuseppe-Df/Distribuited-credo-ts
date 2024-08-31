@@ -9,13 +9,14 @@ import { uuid } from '../../../utils/uuid'
 import { DidExchangeRequestMessage} from '../messages'
 import { SignatureExchangeRole, SignatureExchangeState } from '../models'
 import { DidDocument } from '../../dids'
+import { PlaintextMessage } from 'packages/core/src/types'
 
 
 export interface SignatureExchangeRecordProps {
     id?: string
     tags?: CustomSignatureExchangeTags
     createdAt?: Date
-    message: DidExchangeRequestMessage
+    message: PlaintextMessage
     connectionId: string
     state: SignatureExchangeState
     role: SignatureExchangeRole
@@ -33,7 +34,7 @@ export type DefaultSignatureExchangeTags = {
 export class SignatureExchangeRecord extends BaseRecord<DefaultSignatureExchangeTags, CustomSignatureExchangeTags> {
     public state!: SignatureExchangeState
     public role!: SignatureExchangeRole
-    public message!: DidExchangeRequestMessage
+    public message!: PlaintextMessage
     public connectionId!: string
     public didDocument!: DidDocument
     public base64Payload!: string

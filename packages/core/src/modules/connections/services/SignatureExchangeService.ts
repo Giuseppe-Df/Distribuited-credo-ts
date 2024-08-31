@@ -24,6 +24,7 @@ import { OutboundMessageContext } from '../../../agent/models'
 import { ConnectionService } from './ConnectionService'
 import { OutOfBandService, OutOfBandRecord } from '../../oob'
 import { ConnectionRecord } from '../repository'
+import { PlaintextMessage } from 'packages/core/src/types'
 
 
 @injectable()
@@ -64,8 +65,9 @@ export class SignatureExchangeService {
       jwk: getJwkFromKey(key),
     }))
 
+    this.logger.debug("!!!!!!!!!!!!!messaggio prima del salvataggio!!!!!!!!!!!!!!!!!",options.message)
     const signatureRecord = await this.createRecord(agentContext,{
-      message: <DidExchangeRequestMessage>options.message,
+      message: options.message,
       connectionId: options.connectionId,
       state: SignatureExchangeState.Start,
       role: SignatureExchangeRole.Requester,
@@ -93,15 +95,12 @@ export class SignatureExchangeService {
     const signatureRecord = await this.getById(agentContext,message.dataId)
     signatureRecord.assertRole(SignatureExchangeRole.Requester)
     signatureRecord.assertState(SignatureExchangeState.RequestSent)
-    this.logger.debug("1")
     const key = await this.pubKeyApi.getPublicKey()
-    this.logger.debug("2")
     if (!message.data || !message.dataId){
       throw new CredoError("Signature response message is invalid")
     }
     //const data = signatureRecord.didDocument.toJSON()
     const data = signatureRecord.didDocument
-    this.logger.debug("3", data)
     const signedAttach = new Attachment({
       mimeType: 'application/json',
       data: new AttachmentData({
@@ -109,7 +108,6 @@ export class SignatureExchangeService {
           JsonEncoder.toBase64(data),
       }),
     })
-    this.logger.debug("4")
     //Creazione della struttura dati rappresentate il jws di tipo JwsGeneralFormat
     const kid = new DidKey(key).did
     const signature = TypedArrayEncoder.toBase64URL(TypedArrayEncoder.fromHex(message.data))
@@ -119,19 +117,16 @@ export class SignatureExchangeService {
       header: {kid,},
       payload: signatureRecord.base64Payload,
     }
-    this.logger.debug("5")
     signedAttach.addJws(jws)
     
     signatureRecord.message.didDoc=signedAttach
     signatureRecord.state=SignatureExchangeState.Completed
-    this.logger.debug("6")
     this.update(agentContext,signatureRecord)
     //const returnmessage = new DidExchangeRequestMessage({ label:signatureRecord.message.label?signatureRecord.message.label:"", parentThreadId:signatureRecord.message.pare, did: didDocument.id, goal, goalCode })
-    const themessage = new DidExchangeRequestMessage({id: signatureRecord.message.id,parentThreadId:signatureRecord.parentId ,label:signatureRecord.message.label as string, did: signatureRecord.message.did})
+    this.logger.debug("!!!!!!!id che sto passando, messaggio dopo salvataggio!!!!!!  ",{passato: signatureRecord.message.id, messaggio: signatureRecord.message})
+    const themessage = new DidExchangeRequestMessage({id: <string>signatureRecord.message['@id'],parentThreadId:signatureRecord.parentId ,label:signatureRecord.message.label as string, did: <string>signatureRecord.message.did})
     themessage.didDoc= signedAttach
     /*Object.setPrototypeOf(themessage, DidExchangeRequestMessage.prototype)*/
-    this.logger.debug("themessage in service",themessage)
-    this.logger.debug("themessage in service che vuole fare il tojson",themessage.toJSON())
     
     return  {
       returnMessage:themessage,
@@ -183,7 +178,7 @@ export class SignatureExchangeService {
 }
 
 export interface CreateSignatureRequestOptions {
-  message: DidExchangeRequestMessage
+  message: PlaintextMessage
   connectionId: string,
   didDocument: DidDocument
   parentid:string
