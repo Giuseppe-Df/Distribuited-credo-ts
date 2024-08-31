@@ -88,7 +88,8 @@ export class DistribuitedPackService {
       role: DistribuitedPackRole.Requester
     })
 
-    const cek= await agentContext.wallet.createCek(record.id)
+    const {cek, nonce}= await agentContext.wallet.createCek(record.id)
+    this.logger.debug("cek in chiaro esadecimale"+cek)
     const message = new DistribuitedPackRequestMessage({cek, recipientKey,dataId:record.id})
     
     return {
@@ -99,7 +100,6 @@ export class DistribuitedPackService {
 
   public async processResponse(message:DistribuitedPackResponseMessage, agentContext:AgentContext):Promise<{encryptedMessage:EncryptedMessage, endpoint:string, connectionId?:string, service: ResolvedDidCommService}>{
     
-    this.logger.debug("Processing Distribuited Pack response")
     const dataId = message.dataId
     const record = await this.getById(agentContext,dataId)
     const keys = {

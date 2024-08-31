@@ -204,23 +204,31 @@ export abstract class AskarBaseWallet implements Wallet {
     }
   }
 
-  public async createCek(id:string): Promise<string> {  
+  public async createCek(id:string, keyBackend = KeyBackend.Software): Promise<{cek:string, nonce: Uint8Array}> {  
 
     // Create cek
     let key: AskarKey | undefined
     try {
-      const _key = AskarKey.generate(KeyAlgs.Chacha20C20P)
+      const _key = AskarKey.generate(KeyAlgs.Chacha20C20P, convertToAskarKeyBackend(keyBackend))
 
       // FIXME: we need to create a separate const '_key' so TS definitely knows _key is defined in the session callback.
       // This will be fixed once we use the new 'using' syntax
       key = _key
 
       // Store key
-      await this.withSession((session) =>
+      /*await this.withSession((session) =>
         session.insertKey({ key: _key, name: id })
+      )*/
+
+      await this.withSession((session) =>
+        session.insert({
+          category: 'cek',
+          name: id,
+          value: TypedArrayEncoder.toBase58(_key.secretBytes),
+        })
       )
 
-      return TypedArrayEncoder.toHex(key.secretBytes)
+      return {cek:TypedArrayEncoder.toHex(key.secretBytes), nonce: CryptoBox.randomNonce()}
     } catch (error) {
       key?.handle.free()
       // Handle case where key already exists
@@ -432,18 +440,28 @@ export abstract class AskarBaseWallet implements Wallet {
     cekNonceHex: string,
     encryptedCekHex: string
   ): Promise<EncryptedMessage> {
-    const cek = keyId
+    /*const cek = keyId
       ? await this.withSession((session) => session.fetchKey({ name: keyId }))
-      : undefined
+      : undefined*/
 
+    const entryObject = await this.withSession((session) =>
+      session.fetch({ category: 'cek', name: keyId })
+    )
+    const value = entryObject?.value as string
+    const cekSecret = TypedArrayEncoder.fromBase58(value)
+    const cek = AskarKey.fromSecretBytes({algorithm:KeyAlgs.Chacha20C20P,secretKey:cekSecret})
+    this.logger.debug("cek che prelevo"+TypedArrayEncoder.toHex(cekSecret))
     try {
       if (!cek) {
         throw new WalletError(`Cek not found`)
       }
-      const envelope = didcommV1DistribuitedPack(cek.key,cekNonceHex, encryptedCekHex, payload, recipientKey, senderKeyBase58)
+      //const envelope = didcommV1DistribuitedPack(cek.key,cekNonceHex, encryptedCekHex, payload, recipientKey, senderKeyBase58)
+      const envelope = didcommV1DistribuitedPack(cek,cekNonceHex, encryptedCekHex, payload, recipientKey, senderKeyBase58)
       return envelope
+    }catch(err){
+      throw new WalletError("Error in distribuited Packing", err)
     } finally {
-      cek?.key.handle.free()
+      cek?.handle.free()
     }
   }
 
@@ -464,7 +482,7 @@ export abstract class AskarBaseWallet implements Wallet {
         const recipientKeyEntry = await session.fetchKey({ name: recipientKid })
         try {
           if (recipientKeyEntry) {
-            return didcommV1Unpack(messagePackage, recipientKeyEntry.key)
+            return await didcommV1Unpack(messagePackage, recipientKeyEntry.key)
           }
         } finally {
           recipientKeyEntry?.key.handle.free()

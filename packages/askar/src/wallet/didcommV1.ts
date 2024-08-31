@@ -4,6 +4,7 @@ import { WalletError, JsonEncoder, JsonTransformer, Key, KeyType, TypedArrayEnco
 import { CryptoBox, Key as AskarKey, KeyAlgs } from '@hyperledger/aries-askar-shared'
 
 import { JweEnvelope, JweRecipient } from './JweEnvelope'
+import sodium from 'libsodium-wrappers'
 
 export function didcommV1Pack(payload: Record<string, unknown>, recipientKeys: string[], senderKey?: AskarKey) {
   let cek: AskarKey | undefined
@@ -129,7 +130,7 @@ export function didcommV1DistribuitedPack(cek:AskarKey, cekNonceHex: string, enc
       enc: 'xchacha20poly1305_ietf',
       typ: 'JWM/1.0',
       alg: senderKey ? 'Authcrypt' : 'Anoncrypt',
-      recipients: JsonTransformer.toJSON(recipient),
+      recipients: [JsonTransformer.toJSON(recipient)],
     }
 
     const { ciphertext, tag, nonce } = cek.aeadEncrypt({
@@ -145,13 +146,16 @@ export function didcommV1DistribuitedPack(cek:AskarKey, cekNonceHex: string, enc
     }).toJson()
 
     return envelope as EncryptedMessage
+  } catch (err){
+    throw new WalletError("error didcommv1distribuited",err)
   } finally {
     cek?.handle.free()
     targetExchangeKey?.handle.free()
   }
 }
 
-export function didcommV1Unpack(messagePackage: EncryptedMessage, recipientKey: AskarKey) {
+export async function didcommV1Unpack(messagePackage: EncryptedMessage, recipientKey: AskarKey) {
+  //await sodium.ready
   const protectedJson = JsonEncoder.fromBase64(messagePackage.protected)
 
   const alg = protectedJson.alg
@@ -193,6 +197,7 @@ export function didcommV1Unpack(messagePackage: EncryptedMessage, recipientKey: 
           ciphertext: sender,
         })
       )
+      
       sender_x = AskarKey.fromPublicBytes({
         algorithm: KeyAlgs.Ed25519,
         publicKey: TypedArrayEncoder.fromBase58(senderKey),
@@ -204,6 +209,12 @@ export function didcommV1Unpack(messagePackage: EncryptedMessage, recipientKey: 
         message: encrypted_key,
         nonce: iv,
       })
+      //payloadKey = sodium.crypto_box_open_easy(encrypted_key,iv,sender_x.publicBytes,recip_x.secretBytes)
+      /*if (payloadKey){
+        throw new WalletError("cek decifrato ricevuto in hex "+TypedArrayEncoder.toHex(payloadKey))
+      }*/
+        
+
     } else {
       payloadKey = CryptoBox.sealOpen({ ciphertext: encrypted_key, recipientKey: recip_x })
     }

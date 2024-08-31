@@ -91,13 +91,13 @@ export class MessageReceiver {
       contextCorrelationId,
     })
 
-    try {
-      const message = await this.transformAndValidate(agentContext, inboundMessage)
-      const messageContext = new InboundMessageContext(message, { agentContext })
-      await this.dispatcher.dispatchMessage(messageContext)
+    const message = await this.transformAndValidate(agentContext, inboundMessage)
+    const messageContext = new InboundMessageContext(message, { agentContext })
+    await this.dispatcher.dispatchMessage(messageContext)
+    /*try {
     } catch(err) {
       throw new CredoError("error receiving message", err)
-    }
+    }*/
   }
 
   /**
