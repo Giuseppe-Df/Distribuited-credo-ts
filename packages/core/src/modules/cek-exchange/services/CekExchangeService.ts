@@ -20,6 +20,8 @@ import { JsonEncoder } from '../../../utils/JsonEncoder'
 import { firstValueFrom, ReplaySubject } from 'rxjs'
 import {CredoError} from '../../../error'
 import { TypedArrayEncoder } from '../../../utils'
+import { Key, KeyType } from '../../../crypto'
+import { MessageReceiver } from '../../../agent/MessageReceiver'
 
 
 @injectable()
@@ -45,22 +47,29 @@ export class CekExchangeService {
   }
 
 
-  public async createRequest(agentContext:AgentContext, encryptedMessage:EncryptedMessage): Promise<CekProtocolMsgReturnType<CekRequestMessage>> {
+  public async createRequest(agentContext:AgentContext, encryptedMessage:EncryptedMessage,receivedAt?: Date): Promise<CekProtocolMsgReturnType<CekRequestMessage>> {
     this.logger.debug("Creating Cek Exchange Request")
     const protectedJson = JsonEncoder.fromBase64(encryptedMessage.protected)
     const recipientKids: string[] = protectedJson.recipients.map((r: any) => r.header.kid)
     const verKey = await this.pubKeyApi.getPublicKey()
     
-    const recipientKeyFound = recipientKids.some((recipientKid) => {recipientKid === verKey.publicKeyBase58})
+    const recipientKeyFound = recipientKids.some((recipientKid) => recipientKid === verKey.publicKeyBase58)
     const recipient = protectedJson.recipients.find((r: any) => r.header.kid === verKey.publicKeyBase58)
     if (!recipientKeyFound || !recipient){
       throw new CredoError("No corresponding recipient key found")
     }
 
     const alg = protectedJson.alg
-    if (!['Anoncrypt'].includes(alg)) {
+    if (!['Anoncrypt', 'Authcrypt'].includes(alg)) {
       throw new CredoError(`Unsupported pack algorithm: ${alg}`)
     }
+
+    const sender = recipient.header.sender ? TypedArrayEncoder.fromBase64(recipient.header.sender) : undefined
+    const iv = recipient.header.iv ? TypedArrayEncoder.fromBase64(recipient.header.iv) : undefined
+
+    if (!sender || !iv) {
+      throw new CredoError('Missing IV')
+    } 
 
     const cekRecord = await this.createRecord(agentContext, {
         encryptedMessage,
@@ -69,7 +78,8 @@ export class CekExchangeService {
     })
     const encryptedKey_buffer= TypedArrayEncoder.fromBase64(recipient.encrypted_key)
     const encryptedKey_hex= TypedArrayEncoder.toHex(encryptedKey_buffer)
-    const message = new CekRequestMessage({encryptedKey:encryptedKey_hex, dataId: cekRecord.id})
+    const senderKey = TypedArrayEncoder.toHex(sender)
+    const message = new CekRequestMessage({encryptedKey:encryptedKey_hex, dataId: cekRecord.id, senderKey,nonce: TypedArrayEncoder.toHex(iv)})
     
     return {
       message,
@@ -81,7 +91,16 @@ export class CekExchangeService {
     const cekRecord = await this.getById(agentContext,message.dataId)
     
     const decryptedMessage = await this.envelopeService.unpackMessageCek(agentContext,cekRecord.encryptedMessage,message.payloadKey)
-    agentContext.config.logger.debug("ci sono riuscito",decryptedMessage)
+    const recipientKey= await this.pubKeyApi.getPublicKey()
+
+    const decryptedMessageContext={
+      plaintextMessage: decryptedMessage,
+      senderKey: Key.fromPublicKey(TypedArrayEncoder.fromHex(message.senderKey), KeyType.Ed25519),
+      recipientKey
+    }
+
+    const messageReceiver = agentContext.dependencyManager.resolve(MessageReceiver)
+    await messageReceiver.receivePlaintextMessageFromBroker(agentContext,decryptedMessageContext)
     
 
   }

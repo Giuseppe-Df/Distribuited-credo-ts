@@ -8,6 +8,7 @@ export interface CekExchangeResponseMessageOptions {
   id?: string
   payloadKey:string
   dataId:string
+  senderKey:string
 }
 
 /**
@@ -27,6 +28,7 @@ export class CekResponseMessage extends AgentMessage {
       this.id = options.id || this.generateId();
       this.payloadKey = options.payloadKey;
       this.dataId= options.dataId
+      this.senderKey = options.senderKey
     }
   }
 
@@ -39,5 +41,8 @@ export class CekResponseMessage extends AgentMessage {
 
   @IsString()
   public readonly dataId!: string;
+
+  @IsString()
+  public readonly senderKey!: string;
 
 }

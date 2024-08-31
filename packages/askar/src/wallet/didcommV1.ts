@@ -28,8 +28,10 @@ export function didcommV1Pack(payload: Record<string, unknown>, recipientKeys: s
         if (senderKey && senderExchangeKey) {
           const encryptedSender = CryptoBox.seal({
             recipientKey: targetExchangeKey,
-            message: TypedArrayEncoder.fromString(TypedArrayEncoder.toBase58(senderKey.publicBytes)),
+            //message: TypedArrayEncoder.fromString(TypedArrayEncoder.toBase58(senderKey.publicBytes)),
+            message: senderKey.publicBytes,
           })
+        
           const nonce = CryptoBox.randomNonce()
           const encryptedCek = CryptoBox.cryptoBox({
             recipientKey: targetExchangeKey,

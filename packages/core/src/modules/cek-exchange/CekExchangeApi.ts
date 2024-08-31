@@ -31,8 +31,8 @@ export class CekExchangeApi {
     }
 
 
-    public async requestContentEncryptionKey(encryptedMessage: EncryptedMessage){
-        const result= await this.cekService.createRequest(this.agentContext,encryptedMessage)
+    public async requestContentEncryptionKey(encryptedMessage: EncryptedMessage, receivedAt?: Date){
+        const result= await this.cekService.createRequest(this.agentContext,encryptedMessage,receivedAt)
         const {message,cekRecord}=result
         await this.messageSender.sendMessageToBroker(message,this.agentContext)
         await this.cekService.updateState(this.agentContext,cekRecord,CekState.RequestSent)

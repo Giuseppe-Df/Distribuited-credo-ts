@@ -160,7 +160,8 @@ export class MessageReceiver {
   ) {
     const config = agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
     if (config.useRemoteKeyExchangeProtocol){
-      await this.cekApi.requestContentEncryptionKey(encryptedMessage)
+      await this.cekApi.requestContentEncryptionKey(encryptedMessage,receivedAt)
+      return
     }
     const decryptedMessage = await this.decryptMessage(agentContext, encryptedMessage)
     const { plaintextMessage, senderKey, recipientKey } = decryptedMessage
@@ -212,6 +213,65 @@ export class MessageReceiver {
       // No need to wait for session to stay open if we're not actually going to respond to the message.
       await session.close()
     }
+
+    await this.dispatcher.dispatch(messageContext)
+  }
+
+  public async receivePlaintextMessageFromBroker(
+    agentContext: AgentContext,
+    decryptedMessage: DecryptedMessageContext,
+    receivedAt?: Date
+  ) {
+    
+    const { plaintextMessage, senderKey, recipientKey } = decryptedMessage
+
+    this.logger.info(
+      `Received message with type '${plaintextMessage['@type']}', recipient key ${recipientKey?.fingerprint} and sender key ${senderKey?.fingerprint}`,
+      plaintextMessage
+    )
+
+    let connection
+
+    connection = await this.findConnectionByMessageKeys(agentContext, decryptedMessage)
+    /*if (!connection){
+      connection = await this.getConnectionByThid(agentContext, decryptedMessage)
+    }*/
+
+    const message = await this.transformAndValidate(agentContext, plaintextMessage, connection)
+
+    const messageContext = new InboundMessageContext(message, {
+      // Only make the connection available in message context if the connection is ready
+      // To prevent unwanted usage of unready connections. Connections can still be retrieved from
+      // Storage if the specific protocol allows an unready connection to be used.
+      connection: connection?.isReady ? connection : undefined,
+      senderKey,
+      recipientKey,
+      agentContext,
+      receivedAt,
+    })
+
+    // We want to save a session if there is a chance of returning outbound message via inbound transport.
+    // That can happen when inbound message has `return_route` set to `all` or `thread`.
+    // If `return_route` defines just `thread`, we decide later whether to use session according to outbound message `threadId`.
+   /* if (senderKey && recipientKey && message.hasAnyReturnRoute() && session) {
+      this.logger.debug(`Storing session for inbound message '${message.id}'`)
+      const keys = {
+        recipientKeys: [senderKey],
+        routingKeys: [],
+        senderKey: recipientKey,
+      }
+      session.keys = keys
+      session.inboundMessage = message
+      // We allow unready connections to be attached to the session as we want to be able to
+      // use return routing to make connections. This is especially useful for creating connections
+      // with mediators when you don't have a public endpoint yet.
+      session.connectionId = connection?.id
+      messageContext.sessionId = session.id
+      this.transportService.saveSession(session)
+    } else if (session) {
+      // No need to wait for session to stay open if we're not actually going to respond to the message.
+      await session.close()
+    }*/
 
     await this.dispatcher.dispatch(messageContext)
   }

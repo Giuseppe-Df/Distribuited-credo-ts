@@ -7,8 +7,10 @@ import { IsValidMessageType, parseMessageType } from '../../../utils/messageType
 
 export interface CekExchangeRequestMessageOptions {
   id?: string
+  senderKey: string
   encryptedKey:string
   dataId: string
+  nonce: string
 }
 
 /**
@@ -27,7 +29,9 @@ export class CekRequestMessage extends AgentMessage {
     if (options) {
       this.id = options.id || this.generateId();
       this.dataId = options.dataId;
+      this.senderKey = options.senderKey;
       this.encryptedKey = options.encryptedKey;
+      this.nonce = options.nonce;
     }
   }
 
@@ -36,8 +40,14 @@ export class CekRequestMessage extends AgentMessage {
   public static readonly type = parseMessageType('https://didcomm.org/cek_exchange/1.0/request');
 
   @IsString()
-  public readonly encryptedKey?: string;
+  public readonly encryptedKey!: string;
 
   @IsString()
-  public readonly dataId?: string;
+  public readonly dataId!: string;
+
+  @IsString()
+  public readonly nonce!: string;
+
+  @IsString()
+  public readonly senderKey!: string;
 }
