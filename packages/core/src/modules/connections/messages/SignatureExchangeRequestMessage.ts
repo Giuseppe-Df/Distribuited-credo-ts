@@ -1,7 +1,6 @@
-import { Expose, Type } from 'class-transformer'
-import { IsOptional, IsString, ValidateNested } from 'class-validator'
-
 import { AgentMessage } from '../../../agent/AgentMessage'
+
+import { IsString} from 'class-validator'
 import { IsValidMessageType, parseMessageType } from '../../../utils/messageType'
 
 export interface SignatureExchangeRequestMessageOptions {

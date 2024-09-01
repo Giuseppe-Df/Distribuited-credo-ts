@@ -4,7 +4,6 @@ import { WalletError, JsonEncoder, JsonTransformer, Key, KeyType, TypedArrayEnco
 import { CryptoBox, Key as AskarKey, KeyAlgs } from '@hyperledger/aries-askar-shared'
 
 import { JweEnvelope, JweRecipient } from './JweEnvelope'
-import sodium from 'libsodium-wrappers'
 
 export function didcommV1Pack(payload: Record<string, unknown>, recipientKeys: string[], senderKey?: AskarKey) {
   let cek: AskarKey | undefined
@@ -157,7 +156,7 @@ export function didcommV1DistribuitedPack(cek:AskarKey, cekNonceHex: string, enc
 }
 
 export async function didcommV1Unpack(messagePackage: EncryptedMessage, recipientKey: AskarKey) {
-  //await sodium.ready
+
   const protectedJson = JsonEncoder.fromBase64(messagePackage.protected)
 
   const alg = protectedJson.alg
@@ -211,10 +210,6 @@ export async function didcommV1Unpack(messagePackage: EncryptedMessage, recipien
         message: encrypted_key,
         nonce: iv,
       })
-      //payloadKey = sodium.crypto_box_open_easy(encrypted_key,iv,sender_x.publicBytes,recip_x.secretBytes)
-      /*if (payloadKey){
-        throw new WalletError("cek decifrato ricevuto in hex "+TypedArrayEncoder.toHex(payloadKey))
-      }*/
         
 
     } else {

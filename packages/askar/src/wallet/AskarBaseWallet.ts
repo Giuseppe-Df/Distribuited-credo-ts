@@ -204,7 +204,7 @@ export abstract class AskarBaseWallet implements Wallet {
     }
   }
 
-  public async createCek(id:string, keyBackend = KeyBackend.Software): Promise<{cek:string, nonce: Uint8Array}> {  
+  public async createCek(id:string, keyBackend = KeyBackend.Software): Promise<string> {  
 
     // Create cek
     let key: AskarKey | undefined
@@ -216,10 +216,6 @@ export abstract class AskarBaseWallet implements Wallet {
       key = _key
 
       // Store key
-      /*await this.withSession((session) =>
-        session.insertKey({ key: _key, name: id })
-      )*/
-
       await this.withSession((session) =>
         session.insert({
           category: 'cek',
@@ -228,7 +224,7 @@ export abstract class AskarBaseWallet implements Wallet {
         })
       )
 
-      return {cek:TypedArrayEncoder.toHex(key.secretBytes), nonce: CryptoBox.randomNonce()}
+      return TypedArrayEncoder.toHex(key.secretBytes)
     } catch (error) {
       key?.handle.free()
       // Handle case where key already exists
@@ -441,22 +437,20 @@ export abstract class AskarBaseWallet implements Wallet {
     cekNonceHex: string,
     encryptedCekHex: string
   ): Promise<EncryptedMessage> {
-    /*const cek = keyId
-      ? await this.withSession((session) => session.fetchKey({ name: keyId }))
-      : undefined*/
 
     const entryObject = await this.withSession((session) =>
       session.fetch({ category: 'cek', name: keyId })
     )
+
     const value = entryObject?.value as string
     const cekSecret = TypedArrayEncoder.fromBase58(value)
     const cek = AskarKey.fromSecretBytes({algorithm:KeyAlgs.Chacha20C20P,secretKey:cekSecret})
-    this.logger.debug("cek che prelevo"+TypedArrayEncoder.toHex(cekSecret))
+
     try {
       if (!cek) {
         throw new WalletError(`Cek not found`)
       }
-      //const envelope = didcommV1DistribuitedPack(cek.key,cekNonceHex, encryptedCekHex, payload, recipientKey, senderKeyBase58)
+      
       const envelope = didcommV1DistribuitedPack(cek,cekNonceHex, encryptedCekHex, payload, recipientKey, senderKeyBase58)
       return envelope
     }catch(err){

@@ -52,7 +52,7 @@ export interface Wallet extends Disposable {
    * @throws {WalletKeyExistsError} When the key already exists in the wallet
    */
   createKey(options: WalletCreateKeyOptions): Promise<Key>
-  createCek(id: string): Promise<{cek:string, nonce: Uint8Array}>
+  createCek(id: string): Promise<string>
   sign(options: WalletSignOptions): Promise<Buffer>
   verify(options: WalletVerifyOptions): Promise<boolean>
 

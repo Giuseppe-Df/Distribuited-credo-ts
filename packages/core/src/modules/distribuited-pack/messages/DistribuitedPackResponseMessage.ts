@@ -11,14 +11,9 @@ export interface DistribuitedPackResponseMessageOptions {
   dataId:string
 }
 
-/**
- * Message to communicate the DID document to the other agent when creating a connection
- *
- * @see https://github.com/hyperledger/aries-rfcs/blob/main/features/0023-did-exchange/README.md#1-exchange-request
- */
 export class DistribuitedPackResponseMessage extends AgentMessage {
   /**
-   * Create new DidExchangeRequestMessage instance.
+   * Create new DistribuitedPackRequestMessage instance.
    * @param options
    */
   public constructor(options: DistribuitedPackResponseMessageOptions) {

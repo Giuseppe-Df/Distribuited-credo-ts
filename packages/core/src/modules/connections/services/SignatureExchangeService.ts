@@ -1,48 +1,42 @@
 import type { AgentContext } from '../../../agent'
-import { Logger } from '../../../logger'
-import { inject, injectable } from '../../../plugins'
-import { SignatureExchangeRepository } from '../repository/SignatureExchangeRepository'
-import { InjectionSymbols } from '../../../constants'
 import { EventEmitter } from '../../../agent/EventEmitter'
+import { PubKeyApi } from '../../pubkey'
+import { DidExchangeRequestMessage } from '../messages'
+import { DidDocument, DidKey } from '../../dids'
+import type { AgentMessage } from '../../../agent/AgentMessage'
+import { PlaintextMessage } from 'packages/core/src/types'
+
+import { SignatureExchangeRepository } from '../repository/SignatureExchangeRepository'
 import type { SignatureExchangeRecordProps } from '../repository/SignatureExchangeRecord'
 import { SignatureExchangeRecord } from '../repository/SignatureExchangeRecord'
+import { SignatureExchangeRequestMessage} from '../messages/SignatureExchangeRequestMessage'
+import { SignatureExchangeResponseMessage } from '../messages/SignatureExchangeResponseMessage'
+import { SignatureExchangeRole, SignatureExchangeState } from '../models'
+
+import { Logger } from '../../../logger'
+import { inject, injectable } from '../../../plugins'
+import { InjectionSymbols } from '../../../constants'
 import { Attachment, AttachmentData } from '../../../decorators/attachment/Attachment'
-import { TypedArrayEncoder, isDid, Buffer } from '../../../utils'
+import { TypedArrayEncoder} from '../../../utils'
 import { JsonEncoder } from '../../../utils/JsonEncoder'
 import { JwaSignatureAlgorithm } from '../../../crypto/jose/jwa'
 import { getJwkFromKey } from '../../../crypto/jose/jwk'
 import { CredoError } from '../../../error'
 import {JwsProtectedHeaderOptions} from '../../../crypto/JwsTypes'
-import { PubKeyApi } from '../../pubkey'
-import { DidExchangeRequestMessage } from '../messages'
-import { DidDocument, DidKey } from '../../dids'
-import { SignatureExchangeRole, SignatureExchangeState } from '../models'
-import type { AgentMessage } from '../../../agent/AgentMessage'
-import { SignatureExchangeRequestMessage} from '../messages/SignatureExchangeRequestMessage'
-import { SignatureExchangeResponseMessage } from '../messages/SignatureExchangeResponseMessage'
-import { OutboundMessageContext } from '../../../agent/models'
-import { ConnectionService } from './ConnectionService'
-import { OutOfBandService, OutOfBandRecord } from '../../oob'
-import { ConnectionRecord } from '../repository'
-import { PlaintextMessage } from 'packages/core/src/types'
-
 
 @injectable()
 export class SignatureExchangeService {
   private signatureExchangeRepository: SignatureExchangeRepository
   private pubKeyApi: PubKeyApi
   private logger: Logger
-  private eventEmitter: EventEmitter
 
   public constructor(
     @inject(InjectionSymbols.Logger) logger: Logger,
     signatureExchangeRepository:SignatureExchangeRepository,
-    pubKeyApi: PubKeyApi,
-    eventEmitter: EventEmitter
+    pubKeyApi: PubKeyApi
   ) {
     this.signatureExchangeRepository = signatureExchangeRepository
     this.pubKeyApi = pubKeyApi
-    this.eventEmitter = eventEmitter
     this.logger = logger
   }
 
@@ -65,7 +59,6 @@ export class SignatureExchangeService {
       jwk: getJwkFromKey(key),
     }))
 
-    this.logger.debug("!!!!!!!!!!!!!messaggio prima del salvataggio!!!!!!!!!!!!!!!!!",options.message)
     const signatureRecord = await this.createRecord(agentContext,{
       message: options.message,
       connectionId: options.connectionId,
@@ -77,8 +70,6 @@ export class SignatureExchangeService {
       parentId:options.parentid
     })
 
-    //dataToSign è di tipo Buffer
-    //const dataToSign = TypedArrayEncoder.fromString(`${base64UrlProtectedHeader}.${base64Payload}`)
     const dataToSign = `${base64UrlProtectedHeader}.${base64Payload}`
 
     const label = agentContext.config.label
@@ -90,16 +81,17 @@ export class SignatureExchangeService {
 
   public async processResponse(message:SignatureExchangeResponseMessage, agentContext:AgentContext):Promise<{returnMessage: DidExchangeRequestMessage,connectionId: string}>{
     
-    this.logger.debug("Start processing signature exchange response "+message.data)
+    this.logger.debug("Start processing signature exchange response ")
 
+    const key = await this.pubKeyApi.getPublicKey()
     const signatureRecord = await this.getById(agentContext,message.dataId)
     signatureRecord.assertRole(SignatureExchangeRole.Requester)
     signatureRecord.assertState(SignatureExchangeState.RequestSent)
-    const key = await this.pubKeyApi.getPublicKey()
+    
     if (!message.data || !message.dataId){
       throw new CredoError("Signature response message is invalid")
     }
-    //const data = signatureRecord.didDocument.toJSON()
+
     const data = signatureRecord.didDocument
     const signedAttach = new Attachment({
       mimeType: 'application/json',
@@ -108,6 +100,7 @@ export class SignatureExchangeService {
           JsonEncoder.toBase64(data),
       }),
     })
+
     //Creazione della struttura dati rappresentate il jws di tipo JwsGeneralFormat
     const kid = new DidKey(key).did
     const signature = TypedArrayEncoder.toBase64URL(TypedArrayEncoder.fromHex(message.data))
@@ -122,14 +115,12 @@ export class SignatureExchangeService {
     signatureRecord.message.didDoc=signedAttach
     signatureRecord.state=SignatureExchangeState.Completed
     this.update(agentContext,signatureRecord)
-    //const returnmessage = new DidExchangeRequestMessage({ label:signatureRecord.message.label?signatureRecord.message.label:"", parentThreadId:signatureRecord.message.pare, did: didDocument.id, goal, goalCode })
-    this.logger.debug("!!!!!!!id che sto passando, messaggio dopo salvataggio!!!!!!  ",{passato: signatureRecord.message.id, messaggio: signatureRecord.message})
-    const themessage = new DidExchangeRequestMessage({id: <string>signatureRecord.message['@id'],parentThreadId:signatureRecord.parentId ,label:signatureRecord.message.label as string, did: <string>signatureRecord.message.did})
-    themessage.didDoc= signedAttach
-    /*Object.setPrototypeOf(themessage, DidExchangeRequestMessage.prototype)*/
+
+    const returnMessage = new DidExchangeRequestMessage({id: <string>signatureRecord.message['@id'],parentThreadId:signatureRecord.parentId ,label:signatureRecord.message.label as string, did: <string>signatureRecord.message.did})
+    returnMessage.didDoc= signedAttach
     
     return  {
-      returnMessage:themessage,
+      returnMessage,
       connectionId: signatureRecord.connectionId,
     }
 
@@ -155,8 +146,6 @@ export class SignatureExchangeService {
     const previousState = signatureRecord.state
     signatureRecord.state = newState
     await this.signatureExchangeRepository.update(agentContext, signatureRecord)
-
-    //this.emitStateChangedEvent(agentContext, connectionRecord, previousState)
   }
 
   public update(agentContext: AgentContext, signatureRecord: SignatureExchangeRecord) {

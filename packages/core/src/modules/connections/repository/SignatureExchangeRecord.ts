@@ -1,15 +1,12 @@
 import type { TagsBase } from '../../../storage/BaseRecord'
-
-import { Transform } from 'class-transformer'
-
 import { CredoError } from '../../../error'
-import { BaseRecord } from '../../../storage/BaseRecord'
 import { uuid } from '../../../utils/uuid'
 
-import { DidExchangeRequestMessage} from '../messages'
-import { SignatureExchangeRole, SignatureExchangeState } from '../models'
+import { BaseRecord } from '../../../storage/BaseRecord'
 import { DidDocument } from '../../dids'
 import { PlaintextMessage } from 'packages/core/src/types'
+
+import { SignatureExchangeRole, SignatureExchangeState } from '../models'
 
 
 export interface SignatureExchangeRecordProps {

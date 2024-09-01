@@ -38,7 +38,7 @@ export class EnvelopeService {
     this.logger.debug(`Pack outbound message ${message['@type']}`)
 
     let encryptedMessage = await agentContext.wallet.pack(message, recipientKeysBase58, senderKeyBase58 ?? undefined)
-    //let encryptedMessage = await agentContext.wallet.pack(message, recipientKeysBase58)
+
     // If the message has routing keys (mediator) pack for each mediator
     for (const routingKeyBase58 of routingKeysBase58) {
       const forwardMessage = new ForwardMessage({
@@ -72,6 +72,7 @@ export class EnvelopeService {
     let recipientKeysBase58 = recipientKeys.map((key) => key.publicKeyBase58)
     const routingKeysBase58 = routingKeys.map((key) => key.publicKeyBase58)
     const senderKeyBase58 = senderKey && senderKey.publicKeyBase58
+
     if (!senderKeyBase58){
       throw new CredoError("Unable to process distribuited pack without sender key")
     }
@@ -79,7 +80,6 @@ export class EnvelopeService {
     this.logger.debug(`Distribuited pack outbound message ${payload['@type']}`)
 
     let encryptedMessage = await agentContext.wallet.distribuitedPack(payload, recipientKeysBase58[0],keyId, senderKeyBase58, cekNonceHex, encryptedCekHex)
-
 
     return encryptedMessage
   }
@@ -90,6 +90,7 @@ export class EnvelopeService {
   ): Promise<DecryptedMessageContext> {
     const decryptedMessage = await agentContext.wallet.unpack(encryptedMessage)
     const { recipientKey, senderKey, plaintextMessage } = decryptedMessage
+    
     return {
       recipientKey: recipientKey ? Key.fromPublicKeyBase58(recipientKey, KeyType.Ed25519) : undefined,
       senderKey: senderKey ? Key.fromPublicKeyBase58(senderKey, KeyType.Ed25519) : undefined,

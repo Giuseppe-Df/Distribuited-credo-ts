@@ -4,7 +4,7 @@ import type { DependencyManager, Module } from '../../plugins'
 import { Protocol } from '../../agent/models'
 
 import { DistribuitedPackApi } from './DistribuitedPackApi'
-import { DistribuitedPackRole, DistribuitedPackState } from './models'
+import { DistribuitedPackRole} from './models'
 import { DistribuitedPackRepository } from './repository/DistribuitedPackRepository'
 import { DistribuitedPackService} from './services'
 

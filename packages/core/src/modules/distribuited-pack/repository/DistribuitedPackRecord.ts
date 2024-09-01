@@ -1,13 +1,11 @@
 import type { TagsBase } from '../../../storage/BaseRecord'
+import { BaseRecord } from '../../../storage/BaseRecord'
+
+import { DistribuitedPackRole, DistribuitedPackState } from '../models'
 
 import { CredoError } from '../../../error'
-import { BaseRecord } from '../../../storage/BaseRecord'
 import { uuid } from '../../../utils/uuid'
-import { DistribuitedPackRole, DistribuitedPackState } from '../models'
-import { EncryptedMessage, PlaintextMessage } from '../../../types'
-import { AgentMessage } from 'packages/core/src/agent/AgentMessage'
-import { EnvelopeKeys } from 'packages/core/src/agent/EnvelopeService'
-import { ResolvedDidCommService } from '../../didcomm/types'
+import { PlaintextMessage } from '../../../types'
 
 
 export interface DistribuitedPackRecordProps {
@@ -73,14 +71,14 @@ export class DistribuitedPackRecord extends BaseRecord<DefaultDistribuitedPackTa
 
     if (!expectedStates.includes(this.state)) {
       throw new CredoError(
-        `Connection record is in invalid state ${this.state}. Valid states are: ${expectedStates.join(', ')}.`
+        `Distribuited Pack record is in invalid state ${this.state}. Valid states are: ${expectedStates.join(', ')}.`
       )
     }
   }
 
   public assertRole(expectedRole: DistribuitedPackRole) {
     if (this.role !== expectedRole) {
-      throw new CredoError(`Connection record has invalid role ${this.role}. Expected role ${expectedRole}.`)
+      throw new CredoError(`Distribuited Pack record has invalid role ${this.role}. Expected role ${expectedRole}.`)
     }
   }
 

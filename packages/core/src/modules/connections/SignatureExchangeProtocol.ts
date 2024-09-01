@@ -1,18 +1,14 @@
 import { AgentContext } from '../../agent'
-import { InjectionSymbols } from '../../constants'
+import { MessageSender } from '../../agent/MessageSender'
 
 import { Logger } from '../../logger'
 import { inject, injectable } from '../../plugins'
-import { TypedArrayEncoder, isDid, Buffer } from '../../utils'
-import { JsonEncoder } from '../../utils/JsonEncoder'
+import { InjectionSymbols } from '../../constants'
+import { DidDocument } from '../dids'
+import { DidExchangeRequestMessage } from './messages'
 
 import { SignatureExchangeService } from './services'
-import { DidExchangeRequestMessage } from './messages'
-import { SignatureExchangeRole, SignatureExchangeState } from './models'
-import { MessageSender } from '../../agent/MessageSender'
-import { DidDocument } from '../dids'
-import { SignatureExchangeRequestMessageOptions, SignatureExchangeRequestMessage } from './messages/SignatureExchangeRequestMessage'
-import { OutboundMessageContext } from '../../agent/models'
+import {SignatureExchangeState } from './models'
 
 
 

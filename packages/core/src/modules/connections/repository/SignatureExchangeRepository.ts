@@ -1,11 +1,10 @@
 import type { AgentContext } from '../../../agent'
-import type { SignatureExchangeRole } from '../models'
-
 import { EventEmitter } from '../../../agent/EventEmitter'
-import { InjectionSymbols } from '../../../constants'
-import { injectable, inject } from '../../../plugins'
 import { Repository } from '../../../storage/Repository'
 import { StorageService } from '../../../storage/StorageService'
+
+import { InjectionSymbols } from '../../../constants'
+import { injectable, inject } from '../../../plugins'
 
 import { SignatureExchangeRecord } from './SignatureExchangeRecord'
 

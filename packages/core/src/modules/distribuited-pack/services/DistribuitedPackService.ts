@@ -1,49 +1,41 @@
 import type { AgentMessage } from '../../../agent/AgentMessage'
-import { EncryptedMessage } from '../../../types'
 import { AgentContext } from 'packages/core/src/agent'
 import { EventEmitter } from '../../../agent/EventEmitter'
-import { filterContextCorrelationId } from '../../../agent/Events'
-import { Logger } from '../../../logger'
+import { PubKeyApi } from '../../pubkey/PubKeyApi'
+import { EnvelopeKeys, EnvelopeService } from '../../../agent/EnvelopeService'
 
 import { DistribuitedPackRecordProps } from '../repository/DistribuitedPackRecord'
 import { DistribuitedPackRecord } from '../repository/DistribuitedPackRecord'
 import { DistribuitedPackState, DistribuitedPackRole } from '../models'
 import { DistribuitedPackRepository } from '../repository/DistribuitedPackRepository'
 import { DistribuitedPackRequestMessage, DistribuitedPackResponseMessage } from '../messages'
-import { PubKeyApi } from '../../pubkey/PubKeyApi'
-import { EnvelopeKeys, EnvelopeService } from '../../../agent/EnvelopeService'
 
 
+import { Logger } from '../../../logger'
+import { EncryptedMessage } from '../../../types'
 import { inject, injectable } from '../../../plugins'
 import { InjectionSymbols } from '../../../constants'
-import { first, map, timeout } from 'rxjs/operators'
-import { JsonEncoder } from '../../../utils/JsonEncoder'
-import { firstValueFrom, ReplaySubject } from 'rxjs'
 import {CredoError} from '../../../error'
 import { TypedArrayEncoder } from '../../../utils'
 import { ResolvedDidCommService } from '../../didcomm/types'
 import { Key, KeyType } from '../../../crypto'
-import { DidExchangeRequestMessage } from '../../connections'
 
 @injectable()
 export class DistribuitedPackService {
   private pubKeyApi: PubKeyApi
   private envelopeService: EnvelopeService
   private distribuitedPackRepository: DistribuitedPackRepository
-  private eventEmitter: EventEmitter
   private logger: Logger
 
   public constructor(
     @inject(InjectionSymbols.Logger) logger: Logger,
     pubKeyApi: PubKeyApi,
     envelopeService: EnvelopeService,
-    distribuitedPackRepository: DistribuitedPackRepository,
-    eventEmitter: EventEmitter
+    distribuitedPackRepository: DistribuitedPackRepository
   ) {
     this.pubKeyApi = pubKeyApi
     this.envelopeService = envelopeService
     this.distribuitedPackRepository = distribuitedPackRepository
-    this.eventEmitter = eventEmitter
     this.logger = logger
   }
 
@@ -76,7 +68,6 @@ export class DistribuitedPackService {
       throw new CredoError("Device key and Sender key does not match")
     }
 
-
     const record= await this.createRecord(agentContext,{
       payload:payload.toJSON({ useDidSovPrefixWhereAllowed: agentContext.config.useDidSovPrefixWhereAllowed }),
       recipientKeyBase58,
@@ -88,8 +79,7 @@ export class DistribuitedPackService {
       role: DistribuitedPackRole.Requester
     })
 
-    const {cek, nonce}= await agentContext.wallet.createCek(record.id)
-    this.logger.debug("cek in chiaro esadecimale"+cek)
+    const cek= await agentContext.wallet.createCek(record.id)
     const message = new DistribuitedPackRequestMessage({cek, recipientKey,dataId:record.id})
     
     return {
@@ -102,21 +92,23 @@ export class DistribuitedPackService {
     
     const dataId = message.dataId
     const record = await this.getById(agentContext,dataId)
+    record.assertRole(DistribuitedPackRole.Requester)
+    record.assertState(DistribuitedPackState.RequestSent)
+
     const keys = {
       recipientKeys: [Key.fromPublicKeyBase58(record.recipientKeyBase58,KeyType.Ed25519)],
       routingKeys: [],
       senderKey: Key.fromPublicKeyBase58(record.senderKeyBase58,KeyType.Ed25519),
     }
+    
     const service ={
       id: record.serviceId,
       recipientKeys: [Key.fromPublicKeyBase58(record.recipientKeyBase58,KeyType.Ed25519)],
       routingKeys: [],
       serviceEndpoint: record.endpoint
     }
-    this.logger.debug("sto prima di pack")
+    
     const encryptedMessage = await this.envelopeService.distribuitedPackMessage(agentContext,record.payload,keys, dataId,message.nonce, message.encryptedCek)
-
-    this.logger.debug("sto alla fine di  Distribuited Pack response")
 
     return {encryptedMessage, endpoint: record.endpoint, connectionId:record.connectionId, service}
     

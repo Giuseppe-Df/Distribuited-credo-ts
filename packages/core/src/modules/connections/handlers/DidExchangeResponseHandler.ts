@@ -40,7 +40,6 @@ export class DidExchangeResponseHandler implements MessageHandler {
     if (!recipientKey || !senderKey) {
       throw new CredoError('Unable to process connection response without sender key or recipient key')
     }
-    agentContext.config.logger.debug("threadid che ricevo"+ message.threadId)
 
     const connectionRecord = await this.connectionService.getByRoleAndThreadId(
       agentContext,

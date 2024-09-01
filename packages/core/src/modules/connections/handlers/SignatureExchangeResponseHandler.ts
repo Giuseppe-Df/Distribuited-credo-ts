@@ -1,15 +1,11 @@
 import type { MessageHandler, MessageHandlerInboundMessage } from '../../../agent/MessageHandler'
-
-import { CredoError } from '../../../error'
-import { SignatureExchangeRole } from '../models'
+import { ConnectionService } from '../services'
+import { OutOfBandService } from '../../oob'
 
 import { SignatureExchangeService } from '../services'
 import { SignatureExchangeResponseMessage } from '../messages/SignatureExchangeResponseMessage'
+
 import { OutboundMessageContext } from '../../../agent/models'
-import { ConnectionService } from '../services'
-import { OutOfBandService } from '../../oob'
-import { DidExchangeRequestMessage } from '../messages'
-import { AgentMessage } from '../../../agent/AgentMessage'
 
 export class SignatureExchangeResponseHandler implements MessageHandler {
   private signatureExchangeService: SignatureExchangeService
