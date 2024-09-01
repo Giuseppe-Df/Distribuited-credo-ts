@@ -1,21 +1,24 @@
-import { Logger } from '../../../logger'
 import type { AgentMessage } from '../../../agent/AgentMessage'
-import { inject, injectable } from '../../../plugins'
-import { PubKeyRepository } from '../repository/PubKeyRepository'
-import { InjectionSymbols } from '../../../constants'
-import { first, map, timeout } from 'rxjs/operators'
-import { EventEmitter } from '../../../agent/EventEmitter'
-import { filterContextCorrelationId } from '../../../agent/Events'
 import { AgentContext } from 'packages/core/src/agent'
+import { EventEmitter } from '../../../agent/EventEmitter'
+import { Key, KeyType } from '../../../crypto'
+
+import { PubKeyRepository } from '../repository/PubKeyRepository'
 import { PubKeyRecordProps } from '../repository/PubKeyRecord'
 import { PubKeyRecord } from '../repository/PubKeyRecord'
 import { PubKeyState, PubKeyRole } from '../models'
 import { PubKeyRequestMessage, PubKeyResponseMessage } from '../messages'
-import { Key, KeyType } from '../../../crypto'
 import type { PubKeyStateChangedEvent } from '../PubKeyEvents'
 import { PubKeyEventTypes } from '../PubKeyEvents'
+
+import { Logger } from '../../../logger'
+import { inject, injectable } from '../../../plugins'
+import { InjectionSymbols } from '../../../constants'
+import { first, map, timeout } from 'rxjs/operators'
+import { filterContextCorrelationId } from '../../../agent/Events'
 import { firstValueFrom, ReplaySubject } from 'rxjs'
 import {CredoError} from '../../../error'
+import { TypedArrayEncoder } from '../../../utils'
 
 
 @injectable()
@@ -32,17 +35,6 @@ export class PubKeyService {
     this.pubKeyRepository= pubKeyRepository
     this.eventEmitter = eventEmitter
     this.logger = logger
-  }
-
-  private hexStringToUint8Array(hexString: string): Uint8Array {
-    if (hexString.length % 2 !== 0) {
-      throw new Error('Invalid hex string');
-    }
-    const arrayBuffer = new Uint8Array(hexString.length / 2);
-    for (let i = 0; i < hexString.length; i += 2) {
-      arrayBuffer[i / 2] = parseInt(hexString.substring(i, i + 2), 16);
-    }
-    return arrayBuffer;
   }
 
   public async createRequest(agentContext:AgentContext): Promise<PubKeyProtocolMsgReturnType<PubKeyRequestMessage>> {
@@ -71,34 +63,33 @@ export class PubKeyService {
   }
 
   public async processResponse(message:PubKeyResponseMessage, agentContext:AgentContext):Promise<void>{
+    this.logger.debug("Processing Public Key response")
     const keyRecord= await this.findByContextId(agentContext,agentContext.contextCorrelationId);
 
-    if (keyRecord&&message.publicKey){
-      keyRecord.assertState(PubKeyState.RequestSent)
-      keyRecord.assertRole(PubKeyRole.Requester)
-      
-      const previusState=keyRecord.state
-      /*const key= this.hexStringToUint8Array(message.publicKey)
-      const keyObj=new Key(key,KeyType.Ed25519)
-      keyRecord.key=keyObj*/
-      keyRecord.key=message.publicKey
-      keyRecord.state=PubKeyState.Completed
-      this.update(agentContext,keyRecord)
-      this.emitStateChangedEvent(agentContext,keyRecord,previusState)
-    }else{
-      throw new CredoError("Response Error")
+    if (!keyRecord || !message.publicKey){
+      throw new CredoError("Unable to process Public Key Response");
     }
+
+    keyRecord.assertState(PubKeyState.RequestSent)
+    keyRecord.assertRole(PubKeyRole.Requester)
+    
+    const previusState=keyRecord.state
+    keyRecord.key=message.publicKey
+    keyRecord.state=PubKeyState.Completed
+
+    this.update(agentContext,keyRecord)
+    this.emitStateChangedEvent(agentContext,keyRecord,previusState)
 
   }
 
   public async getPublicKey (agentContext:AgentContext):Promise<Key>{
+    this.logger.debug("Retriving device Public Key")
     const publicKeyRecord = await this.getByContextId(agentContext,agentContext.contextCorrelationId)
     const {key}= publicKeyRecord
     if (!key){
       throw new CredoError("The agent has no associated public key")
     }
-    const Uint8Key = this.hexStringToUint8Array(key)
-    return Key.fromPublicKey(Uint8Key,KeyType.Ed25519)
+    return Key.fromPublicKey(TypedArrayEncoder.fromHex(key),KeyType.Ed25519)
   }
 
   public async createRecord(agentContext: AgentContext, options: PubKeyRecordProps): Promise<PubKeyRecord> {
@@ -111,8 +102,6 @@ export class PubKeyService {
     const previousState = pubKeyRecord.state
     pubKeyRecord.state = newState
     await this.pubKeyRepository.update(agentContext, pubKeyRecord)
-
-    //this.emitStateChangedEvent(agentContext, connectionRecord, previousState)
   }
 
   public update(agentContext: AgentContext, pubKeyRecord: PubKeyRecord) {

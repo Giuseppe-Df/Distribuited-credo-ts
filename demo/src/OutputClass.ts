@@ -7,7 +7,9 @@ export enum Color {
 
 export enum Output {
   NoConnectionRecordFromOutOfBand = `\nNo connectionRecord has been created from invitation\n`,
+  NoPubKey = `\nNo publicKeyRecord has been created from request\n`,
   ConnectionEstablished = `\nConnection established!`,
+  PubKeyObtained = `\nPublic Key obtained!`,
   MissingConnectionRecord = `\nNo connectionRecord ID has been set yet\n`,
   ConnectionLink = `\nRun 'Receive connection invitation' in Alice and paste this invitation link:\n\n`,
   Exit = 'Shutting down agent...\nExiting...',

@@ -5,11 +5,13 @@ import { greenText, Output, redText } from './OutputClass'
 
 export class Alice extends BaseAliceAgent {
   public connected: boolean
+  public pubKeyObtained: boolean
   public connectionRecordFaberId?: string
 
   public constructor(port: number, name: string) {
     super({ port, name })
     this.connected = false
+    this.pubKeyObtained = false
   }
 
   public static async build(): Promise<Alice> {
@@ -21,6 +23,9 @@ export class Alice extends BaseAliceAgent {
 
   public async pubKeyRequest(): Promise<void>{
     const keyRecord = await this.agent.pubkey.requestPubKey()
+    if (!keyRecord) {
+      throw new Error(redText(Output.NoPubKey))
+    }
     await this.waitForPublicKey(keyRecord)
 
   }
@@ -49,6 +54,8 @@ export class Alice extends BaseAliceAgent {
 
   private async waitForPublicKey(pubKeyRecord: PubKeyRecord) {
     await this.agent.pubkey.returnWhenIsObtained(pubKeyRecord.id)
+    this.pubKeyObtained = true
+    console.log(greenText(Output.PubKeyObtained))
   }
 
   public async acceptConnection(invitation_url: string) {

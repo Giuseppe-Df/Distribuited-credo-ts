@@ -1,5 +1,4 @@
 import type { AgentContext } from '../../../agent'
-import type { PubKeyRole } from '../models'
 
 import { EventEmitter } from '../../../agent/EventEmitter'
 import { InjectionSymbols } from '../../../constants'

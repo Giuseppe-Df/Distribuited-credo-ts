@@ -57,14 +57,14 @@ export class PubKeyRecord extends BaseRecord<DefaultPubKeyTags, CustomPubKeyTags
 
     if (!expectedStates.includes(this.state)) {
       throw new CredoError(
-        `Connection record is in invalid state ${this.state}. Valid states are: ${expectedStates.join(', ')}.`
+        `Public key record is in invalid state ${this.state}. Valid states are: ${expectedStates.join(', ')}.`
       )
     }
   }
 
   public assertRole(expectedRole: PubKeyRole) {
     if (this.role !== expectedRole) {
-      throw new CredoError(`Connection record has invalid role ${this.role}. Expected role ${expectedRole}.`)
+      throw new CredoError(`Public key record has invalid role ${this.role}. Expected role ${expectedRole}.`)
     }
   }
 

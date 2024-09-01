@@ -1,27 +1,21 @@
 import { IsString } from 'class-validator'
-
 import { AgentMessage } from '../../../agent/AgentMessage'
 import { IsValidMessageType, parseMessageType } from '../../../utils/messageType'
 
 
-export interface CekExchangeResponseMessageOptions {
+export interface DistribuitedUnpackResponseMessageOptions {
   id?: string
   payloadKey:string
   dataId:string
   senderKey:string
 }
 
-/**
- * Message to communicate the DID document to the other agent when creating a connection
- *
- * @see https://github.com/hyperledger/aries-rfcs/blob/main/features/0023-did-exchange/README.md#1-exchange-request
- */
-export class CekResponseMessage extends AgentMessage {
+export class DistribuitedUnpackResponseMessage extends AgentMessage {
   /**
-   * Create new DidExchangeRequestMessage instance.
+   * Create new DistribuitedUnpackResponseMessage instance.
    * @param options
    */
-  public constructor(options: CekExchangeResponseMessageOptions) {
+  public constructor(options: DistribuitedUnpackResponseMessageOptions) {
     super();
 
     if (options) {
@@ -32,9 +26,9 @@ export class CekResponseMessage extends AgentMessage {
     }
   }
 
-  @IsValidMessageType(CekResponseMessage.type)
-  public readonly type = CekResponseMessage.type.messageTypeUri;
-  public static readonly type = parseMessageType('https://didcomm.org/cek_exchange/1.0/response');
+  @IsValidMessageType(DistribuitedUnpackResponseMessage.type)
+  public readonly type = DistribuitedUnpackResponseMessage.type.messageTypeUri;
+  public static readonly type = parseMessageType('https://didcomm.org/distribuited_unpack/1.0/response');
 
   @IsString()
   public readonly payloadKey!: string;

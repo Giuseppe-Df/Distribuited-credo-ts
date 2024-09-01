@@ -34,7 +34,7 @@ import {
   LogLevel,
   PubKeyModule,
   DistribuitedPackModule,
-  CekModule
+  DistribuitedUnpackModule
 } from '@credo-ts/core'
 import { IndyVdrIndyDidResolver, IndyVdrAnonCredsRegistry, IndyVdrModule } from '@credo-ts/indy-vdr'
 import { agentDependencies, HttpInboundTransport } from '@credo-ts/node'
@@ -104,7 +104,7 @@ function getAskarAnonCredsIndyModules() {
   return {
     pubkey: new PubKeyModule(),
     distribuitedPack: new DistribuitedPackModule(),
-    cekExchange: new CekModule(),
+    distribuitedUnpack: new DistribuitedUnpackModule(),
     connections: new ConnectionsModule({
       autoAcceptConnections: true,
       useRemoteKeyExchangeProtocol:true,

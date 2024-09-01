@@ -4,7 +4,7 @@ import type { AgentContext } from './context'
 import type { ConnectionRecord } from '../modules/connections'
 import type { InboundTransport } from '../transport'
 import type { EncryptedMessage, PlaintextMessage } from '../types'
-import { CekExchangeApi } from '../modules/cek-exchange'
+import { DistribuitedUnpackApi } from '../modules/distribuited-unpack'
 
 import { InjectionSymbols } from '../constants'
 import { CredoError } from '../error'
@@ -31,7 +31,7 @@ import { DistribuitedPackApi } from '../modules/distribuited-pack'
 @injectable()
 export class MessageReceiver {
   private envelopeService: EnvelopeService
-  private cekApi: CekExchangeApi
+  private distribuitedUnpackApi: DistribuitedUnpackApi
   private transportService: TransportService
   private messageSender: MessageSender
   private dispatcher: Dispatcher
@@ -43,7 +43,7 @@ export class MessageReceiver {
 
   public constructor(
     envelopeService: EnvelopeService,
-    cekApi: CekExchangeApi,
+    distribuitedUnpackApi: DistribuitedUnpackApi,
     transportService: TransportService,
     messageSender: MessageSender,
     connectionService: ConnectionService,
@@ -52,7 +52,7 @@ export class MessageReceiver {
     @inject(InjectionSymbols.AgentContextProvider) agentContextProvider: AgentContextProvider,
     @inject(InjectionSymbols.Logger) logger: Logger
   ) {
-    this.cekApi = cekApi
+    this.distribuitedUnpackApi = distribuitedUnpackApi
     this.envelopeService = envelopeService
     this.transportService = transportService
     this.messageSender = messageSender
@@ -84,7 +84,6 @@ export class MessageReceiver {
    * @param inboundMessage the message to receive and handle
    */
   public async receiveMessageFromBroker(inboundMessage: PlaintextMessage, contextCorrelationId?: string) {
-    this.logger.debug(`Agent received message`)
 
     // Find agent context for the inbound message
     const agentContext = await this.agentContextProvider.getContextForInboundMessage(inboundMessage, {
@@ -94,10 +93,7 @@ export class MessageReceiver {
     const message = await this.transformAndValidate(agentContext, inboundMessage)
     const messageContext = new InboundMessageContext(message, { agentContext })
     await this.dispatcher.dispatchMessage(messageContext)
-    /*try {
-    } catch(err) {
-      throw new CredoError("error receiving message", err)
-    }*/
+
   }
 
   /**
@@ -160,7 +156,7 @@ export class MessageReceiver {
   ) {
     const config = agentContext.dependencyManager.resolve(ConnectionsModuleConfig)
     if (config.useRemoteKeyExchangeProtocol){
-      await this.cekApi.requestContentEncryptionKey(encryptedMessage,receivedAt)
+      await this.distribuitedUnpackApi.distribuitedUnpack(encryptedMessage)
       return
     }
     const decryptedMessage = await this.decryptMessage(agentContext, encryptedMessage)
@@ -174,9 +170,6 @@ export class MessageReceiver {
     let connection
 
     connection = await this.findConnectionByMessageKeys(agentContext, decryptedMessage)
-    /*if (!connection){
-      connection = await this.getConnectionByThid(agentContext, decryptedMessage)
-    }*/
 
     const message = await this.transformAndValidate(agentContext, plaintextMessage, connection)
 
@@ -233,9 +226,6 @@ export class MessageReceiver {
     let connection
 
     connection = await this.findConnectionByMessageKeys(agentContext, decryptedMessage)
-    /*if (!connection){
-      connection = await this.getConnectionByThid(agentContext, decryptedMessage)
-    }*/
 
     const message = await this.transformAndValidate(agentContext, plaintextMessage, connection)
 
@@ -249,29 +239,6 @@ export class MessageReceiver {
       agentContext,
       receivedAt,
     })
-
-    // We want to save a session if there is a chance of returning outbound message via inbound transport.
-    // That can happen when inbound message has `return_route` set to `all` or `thread`.
-    // If `return_route` defines just `thread`, we decide later whether to use session according to outbound message `threadId`.
-   /* if (senderKey && recipientKey && message.hasAnyReturnRoute() && session) {
-      this.logger.debug(`Storing session for inbound message '${message.id}'`)
-      const keys = {
-        recipientKeys: [senderKey],
-        routingKeys: [],
-        senderKey: recipientKey,
-      }
-      session.keys = keys
-      session.inboundMessage = message
-      // We allow unready connections to be attached to the session as we want to be able to
-      // use return routing to make connections. This is especially useful for creating connections
-      // with mediators when you don't have a public endpoint yet.
-      session.connectionId = connection?.id
-      messageContext.sessionId = session.id
-      this.transportService.saveSession(session)
-    } else if (session) {
-      // No need to wait for session to stay open if we're not actually going to respond to the message.
-      await session.close()
-    }*/
 
     await this.dispatcher.dispatch(messageContext)
   }
@@ -338,18 +305,6 @@ export class MessageReceiver {
       recipientKey,
     })
   }
-
-  /*private async getConnectionByThid(
-    agentContext: AgentContext,
-    { plaintextMessage }: DecryptedMessageContext
-  ): Promise<ConnectionRecord | null> {
-    
-    const threadId= plaintextMessage['~thread']?.thid
-    this.logger.debug("threadID trovato"+threadId)
-    if (!threadId) return null
-
-    return this.connectionService.findByThreadId(agentContext, threadId)
-  }*/
 
   /**
    * Transform an plaintext DIDComm message into it's corresponding message class. Will look at all message types in the registered handlers.

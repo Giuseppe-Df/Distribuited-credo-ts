@@ -18,6 +18,7 @@ export const runAlice = async () => {
 
 enum PromptOptions {
   PubKey="Request public key",
+  RequestNewPubKey="Request a new public key",
   ReceiveConnectionUrl = 'Receive connection invitation',
   SendMessage = 'Send message',
   Exit = 'Exit',
@@ -43,9 +44,13 @@ export class AliceInquirer extends BaseInquirer {
   }
 
   private async getPromptChoice() {
-    if (this.alice.connectionRecordFaberId) return prompt([this.inquireOptions(this.promptOptionsString)])
+    const fullOption = [PromptOptions.ReceiveConnectionUrl,PromptOptions.RequestNewPubKey,PromptOptions.SendMessage, PromptOptions.Exit, PromptOptions.Restart]
+    if (this.alice.connectionRecordFaberId) return prompt([this.inquireOptions(fullOption)])
+    
+    const extendedOption = [PromptOptions.ReceiveConnectionUrl,PromptOptions.RequestNewPubKey, PromptOptions.Exit, PromptOptions.Restart]
+    if (this.alice.pubKeyObtained) return prompt([this.inquireOptions(extendedOption)])
 
-    const reducedOption = [PromptOptions.PubKey,PromptOptions.ReceiveConnectionUrl, PromptOptions.Exit, PromptOptions.Restart]
+    const reducedOption = [PromptOptions.PubKey, PromptOptions.Exit, PromptOptions.Restart]
     return prompt([this.inquireOptions(reducedOption)])
   }
 
@@ -55,6 +60,9 @@ export class AliceInquirer extends BaseInquirer {
 
     switch (choice.options) {
       case PromptOptions.PubKey:
+        await this.publicKey()
+        break
+      case PromptOptions.RequestNewPubKey:
         await this.publicKey()
         break
       case PromptOptions.ReceiveConnectionUrl:
@@ -75,6 +83,7 @@ export class AliceInquirer extends BaseInquirer {
 
   public async publicKey(){
     await this.alice.pubKeyRequest()
+    if (!this.alice.pubKeyObtained) return
   }
 
   public async acceptCredentialOffer(credentialRecord: CredentialExchangeRecord) {

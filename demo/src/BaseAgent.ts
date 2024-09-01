@@ -30,10 +30,7 @@ import {
   Agent,
   HttpOutboundTransport,
   ConsoleLogger,
-  MqttTransport,
   LogLevel,
-  PubKeyModule,
-  CekModule
 } from '@credo-ts/core'
 import { IndyVdrIndyDidResolver, IndyVdrAnonCredsRegistry, IndyVdrModule } from '@credo-ts/indy-vdr'
 import { agentDependencies, HttpInboundTransport } from '@credo-ts/node'

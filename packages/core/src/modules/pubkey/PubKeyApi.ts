@@ -1,14 +1,12 @@
 import { AgentContext } from '../../agent'
 import { MessageSender } from '../../agent/MessageSender'
-import { PubKeyRequestMessage } from './messages'
+import { MessageHandlerRegistry } from '../../agent/MessageHandlerRegistry'
+
 import { PubKeyService } from './services'
-import { PubKeyRole,PubKeyState } from './models'
-import { PubKeyResponseMessage } from './messages/PubKeyResponseMessage'
+import { PubKeyState } from './models'
+import { PubKeyResponseHandler } from './handlers'
 
 import { injectable } from '../../plugins'
-import { PubKeyRecord } from './repository'
-import { MessageHandlerRegistry } from '../../agent/MessageHandlerRegistry'
-import { PubKeyResponseHandler } from './handlers'
 
 @injectable()
 export class PubKeyApi {
@@ -29,15 +27,6 @@ export class PubKeyApi {
         this.registerMessageHandlers(messageHandlerRegistry)
     }
 
-    /* SCRIPT PER ELIMINARE I RECORD
-    const records =await this.pubKeyService.getAll(this.agentContext)
-        for (const record of records){
-          this.pubKeyService.delete(this.agentContext,record)
-        }
-        const recordsnew=await this.pubKeyService.getAll(this.agentContext)
-        this.agentContext.config.logger.debug("record attuali",recordsnew)
-    */
-
     public async requestPubKey(){  
       const result= await this.pubKeyService.createRequest(this.agentContext)
         const {message,keyRecord}=result
@@ -47,7 +36,7 @@ export class PubKeyApi {
     }
 
     public async getPublicKey(){
-      return this.pubKeyService.getPublicKey(this.agentContext)
+      return await this.pubKeyService.getPublicKey(this.agentContext)
     }
 
 

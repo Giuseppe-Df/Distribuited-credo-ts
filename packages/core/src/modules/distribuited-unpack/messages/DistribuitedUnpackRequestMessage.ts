@@ -1,11 +1,9 @@
-import { Expose, Type } from 'class-transformer'
-import { IsOptional, IsString, ValidateNested } from 'class-validator'
-
 import { AgentMessage } from '../../../agent/AgentMessage'
 import { IsValidMessageType, parseMessageType } from '../../../utils/messageType'
+import { IsString} from 'class-validator'
 
 
-export interface CekExchangeRequestMessageOptions {
+export interface DistribuitedUnpackRequestMessageOptions {
   id?: string
   senderKey: string
   encryptedKey:string
@@ -13,17 +11,13 @@ export interface CekExchangeRequestMessageOptions {
   nonce: string
 }
 
-/**
- * Message to communicate the DID document to the other agent when creating a connection
- *
- * @see https://github.com/hyperledger/aries-rfcs/blob/main/features/0023-did-exchange/README.md#1-exchange-request
- */
-export class CekRequestMessage extends AgentMessage {
+
+export class DistribuitedUnpackRequestMessage extends AgentMessage {
   /**
    * Create new DidExchangeRequestMessage instance.
    * @param options
    */
-  public constructor(options: CekExchangeRequestMessageOptions) {
+  public constructor(options: DistribuitedUnpackRequestMessageOptions) {
     super();
 
     if (options) {
@@ -35,9 +29,9 @@ export class CekRequestMessage extends AgentMessage {
     }
   }
 
-  @IsValidMessageType(CekRequestMessage.type)
-  public readonly type = CekRequestMessage.type.messageTypeUri;
-  public static readonly type = parseMessageType('https://didcomm.org/cek_exchange/1.0/request');
+  @IsValidMessageType(DistribuitedUnpackRequestMessage.type)
+  public readonly type = DistribuitedUnpackRequestMessage.type.messageTypeUri;
+  public static readonly type = parseMessageType('https://didcomm.org/distribuited_unpack/1.0/request');
 
   @IsString()
   public readonly encryptedKey!: string;

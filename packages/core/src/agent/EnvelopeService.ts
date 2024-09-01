@@ -97,7 +97,7 @@ export class EnvelopeService {
     }
   }
 
-  public async unpackMessageCek(agentContext: AgentContext, encryptedMessage:EncryptedMessage, payloadKey: string): Promise <PlaintextMessage>{
+  public async distribuitedUnpackMessage(agentContext: AgentContext, encryptedMessage:EncryptedMessage, payloadKey: string): Promise <PlaintextMessage>{
     return await agentContext.wallet.distribuitedUnpack(encryptedMessage,payloadKey);
   }
 }

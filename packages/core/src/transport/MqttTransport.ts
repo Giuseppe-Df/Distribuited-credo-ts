@@ -1,13 +1,12 @@
-import type { OutboundTransport } from './OutboundTransport'
 import type { Agent } from '../agent/Agent'
-import mqtt, { MqttClient } from "mqtt"
-import { OutboundPackage } from '../types'
+import { AgentContext } from '../agent'
 import { AgentMessage } from '../agent/AgentMessage'
 import { MessageReceiver } from '../agent/MessageReceiver'
+
+import mqtt, { MqttClient } from "mqtt"
+
 import { getOutboundTopics, getInboundTopics } from './MqttTopics'
-import { resolve } from 'path'
 import { CredoError } from '../error'
-import { AgentContext } from '../agent'
 
 export class MqttTransport {
 
@@ -31,6 +30,7 @@ export class MqttTransport {
             agent.config.logger.debug(`MQTT Transport Started`)
         }catch(err){
             agent.config.logger.debug(`Error Starting MQTT Transport`, err)
+            return
         }
 
         try{
@@ -42,7 +42,7 @@ export class MqttTransport {
         }
 
         this.client.on('message', (topic, message) => {
-            agent.config.logger.debug(`Received Message on topic: `+topic+" "+message.toString())
+            agent.config.logger.debug(`Agent received message on topic: `+topic+" "+message.toString())
             const parsedMessage=JSON.parse(message.toString())
             messageReceiver.receiveMessageFromBroker(parsedMessage,agent.context.contextCorrelationId)
         });
@@ -56,10 +56,11 @@ export class MqttTransport {
     public async publish(message: AgentMessage, agentContext:AgentContext) {
         if (!this.client) {
             await this.connect();
+            await this.subscribe();
         }
 
         const topic = this.outboundTopics[message.type];
-        agentContext.config.logger.debug("topic" + topic)
+        agentContext.config.logger.debug("Publishing on topic " + topic)
         if (!topic) {
             throw new Error(`Unsupported message type: ${message.type}`);
         }
@@ -70,7 +71,6 @@ export class MqttTransport {
                 if (err) {
                     reject(err);
                 } else {
-                    agentContext.config.logger.debug("Publishing message" + JSON.stringify(message))
                     resolve();
                 }
             });
