@@ -44,6 +44,14 @@ Credo is a framework written in TypeScript for building **decentralized identity
 
 Documentation on how to get started with Credo can be found at https://credo.js.org/
 
+## New Features in This Fork 
+
+This fork introduces a series of protocols that enable interaction between the Aries agent and a resource-constrained IoT device, specifically an ESP32. These protocols facilitate the integration of the ESP32 with other agents even though it lacks the computational and memory capacity to operate as a fully-fledged agent independently.
+
+The IoT device (ESP32) is designed to function within a distributed system, delegating significant processing tasks to the main agent while managing its own connections and handling verifiable credentials. This approach ensures that the ESP32 can participate in agent-based communications and operations without needing to perform extensive data processing or storage locally.
+
+For more details on the IoT device implementation, please refer to the related repository here.
+
 ## Features
 
 See [Supported Features](https://credo.js.org/guides/features) on the Credo website for a full list of supported features.
