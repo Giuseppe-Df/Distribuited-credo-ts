@@ -50,7 +50,7 @@ This fork introduces a series of protocols enabling interaction between the Arie
 
 The IoT device (ESP32) operates within a distributed system, offloading significant processing tasks to the main agent while managing its own connections and handling verifiable credentials. This distributed approach ensures the ESP32 can engage in agent operations without the need for extensive local data processing or storage.
 
-For more details on the IoT device implementation, refer to the related repository [here](#). To run the agent, please follow the instructions found in the `/demo` repository. 
+For more details on the IoT device implementation, refer to the related repository [here](#https://github.com/Giuseppe-Df/IoTAgent). To run the agent, please follow the instructions found in the `/demo` repository. 
 
 ### Framework Evolution
 
