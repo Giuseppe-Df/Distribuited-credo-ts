@@ -44,13 +44,39 @@ Credo is a framework written in TypeScript for building **decentralized identity
 
 Documentation on how to get started with Credo can be found at https://credo.js.org/
 
-## New Features in This Fork 
+## New Features in This Fork
 
-This fork introduces a series of protocols that enable interaction between the Aries agent and a resource-constrained IoT device, specifically an ESP32. These protocols facilitate the integration of the ESP32 with other agents even though it lacks the computational and memory capacity to operate as a fully-fledged agent independently.
+This fork introduces a series of protocols enabling interaction between the Aries agent and a resource-constrained IoT device, specifically the ESP32. These protocols allow the ESP32 to integrate with other agents despite its limited computational and memory resources, ensuring seamless participation in agent-based communications.
 
-The IoT device (ESP32) is designed to function within a distributed system, delegating significant processing tasks to the main agent while managing its own connections and handling verifiable credentials. This approach ensures that the ESP32 can participate in agent-based communications and operations without needing to perform extensive data processing or storage locally.
+The IoT device (ESP32) operates within a distributed system, offloading significant processing tasks to the main agent while managing its own connections and handling verifiable credentials. This distributed approach ensures the ESP32 can engage in agent operations without the need for extensive local data processing or storage.
 
-For more details on the IoT device implementation, please refer to the related repository here.
+For more details on the IoT device implementation, refer to the related repository [here](#). To run the agent, please follow the instructions found in the `/demo` repository. 
+
+### Framework Evolution
+
+The framework's evolution has resulted in the implementation of additional modules that should be integrated into the base agent, as demonstrated in `demo/src/BaseAliceAgent.ts`.
+
+### Modified Files by Functionality
+
+1. **Distributed Pack Protocol**  
+   This protocol enables the distributed packaging process of messages, specifically required to sign the Content Encryption Key (CEK) with the sender's private key (ESP32).  
+   - Files related to this change are located in:  
+     `core/src/modules/distribuited-pack`
+
+2. **Distributed Unpack Protocol**  
+   This protocol facilitates the distributed unpackaging of messages, particularly necessary to decrypt the CEK with the recipient’s private key (ESP32).  
+   - Files related to this change are located in:  
+     `core/src/modules/distribuited-unpack`
+
+3. **Public Key Exchange Protocol**  
+   This protocol allows retrieval of the ESP32’s public key to be included in the DID Document (DIDDoc).  
+   - Files related to this change are located in:  
+     `core/src/modules/pubkey`
+
+4. **Signature Exchange Protocol**  
+   This protocol enables the retrieval of the signed version of the DID Document.  
+   - Files related to this change are located in:  
+     `core/src/modules/connections`
 
 ## Features
 
